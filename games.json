@@ -649,59 +649,6 @@
       "cover": "assets/covers/camera.jpg"
     },
     {
-      "id": "taiwan-art",
-      "title": "台灣藝術尋寶",
-      "subtitle": "藝術環島之旅",
-      "category": "adventure",
-      "goals": [
-        "藝術認知",
-        "探索"
-      ],
-      "tags": {
-        "input": [
-          "click"
-        ],
-        "difficulty": [
-          "intermediate"
-        ]
-      },
-      "summary": "與光魔法師、阿目走訪北中南東，認識黃土水、朱銘、日月潭九蛙等作品。",
-      "levels": "北、中、南、東四區關卡",
-      "offline": true,
-      "offline_note": "素材與遊戲放在同一資料夾",
-      "status": "partial",
-      "known_missing": [
-        "char_amu.png",
-        "char_magician.png",
-        "bgm_main.mp3",
-        "se_brush.mp3",
-        "se_chisel.mp3",
-        "se_click.mp3",
-        "se_fail.mp3",
-        "se_success.mp3"
-      ],
-      "source": {
-        "label": "muve-education/taiwan-art-game",
-        "url": "https://github.com/muve-education/taiwan-art-game"
-      },
-      "versions": [
-        {
-          "id": "v1",
-          "label": "收錄版（素材不完整）",
-          "date": "2026-11-26",
-          "path": "games/taiwan-art/v1/index.html",
-          "notes": "收錄 GitHub muve-education/taiwan-art-game 最新提交 eb02d3b（2026-11-26）的 index.html 與 8 個圖檔，程式未修改。缺角色圖 2 張與音效 6 個（原倉庫也沒有）",
-          "source": "https://muve-education.github.io/taiwan-art-game/",
-          "changes": []
-        }
-      ],
-      "guesses": [
-        "主分類「綜合闖關」、難度「中等」為推測"
-      ],
-      "defaultVersion": "v1",
-      "cover": "assets/covers/taiwan-art.jpg"
-    },
-    {
       "id": "lunar-new-year",
       "title": "農曆新年眼動遊戲",
       "category": "adventure",
