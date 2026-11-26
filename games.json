@@ -1,0 +1,734 @@
+{
+  "site": "目目眼動遊戲收藏",
+  "updated": "2026-11-26",
+  "categories": [
+    {
+      "id": "cause-effect",
+      "name": "因果入門",
+      "desc": "看一下或點一下，畫面就有明顯反應"
+    },
+    {
+      "id": "fixation",
+      "name": "凝視選取",
+      "desc": "把視線停在目標上，練習定點與停留"
+    },
+    {
+      "id": "tracking",
+      "name": "視覺追蹤",
+      "desc": "眼睛跟著移動的目標，持續注視才前進"
+    },
+    {
+      "id": "matching",
+      "name": "配對分類",
+      "desc": "顏色、形狀、位置的對應"
+    },
+    {
+      "id": "daily",
+      "name": "生活步驟",
+      "desc": "在生活情境裡做選擇、依序完成一件事"
+    },
+    {
+      "id": "create",
+      "name": "創作表達",
+      "desc": "著色、拍照等自由創作工具"
+    },
+    {
+      "id": "adventure",
+      "name": "綜合闖關",
+      "desc": "多種關卡或主題的綜合遊戲"
+    }
+  ],
+  "tags": {
+    "input": [
+      {
+        "id": "dwell",
+        "name": "凝視停留"
+      },
+      {
+        "id": "click",
+        "name": "點擊"
+      },
+      {
+        "id": "magnet",
+        "name": "磁吸"
+      }
+    ],
+    "difficulty": [
+      {
+        "id": "beginner",
+        "name": "入門"
+      },
+      {
+        "id": "intermediate",
+        "name": "中等"
+      },
+      {
+        "id": "advanced",
+        "name": "進階"
+      }
+    ]
+  },
+  "games": [
+    {
+      "id": "watering",
+      "title": "開心小花園",
+      "subtitle": "澆花",
+      "category": "cause-effect",
+      "goals": [
+        "因果",
+        "維持注視"
+      ],
+      "tags": {
+        "input": [
+          "dwell",
+          "click"
+        ],
+        "difficulty": [
+          "beginner"
+        ]
+      },
+      "summary": "注視左、中、右三區花圃，澆水壺倒水、花長大，三區都澆完就過關。",
+      "levels": "三個大目標；凝視秒數 0.5–4 秒可調（預設 1.5 秒）",
+      "offline": false,
+      "offline_note": "需連網：Tailwind CDN、Google Fonts、canvas-confetti",
+      "source": {
+        "label": "Self-made-mini-game／澆花.html",
+        "url": "https://github.com/mandysu-beep/Self-made-mini-game/blob/main/%E6%BE%86%E8%8A%B1.html"
+      },
+      "versions": [
+        {
+          "id": "v1",
+          "label": "收錄版",
+          "date": "2026-11-26",
+          "path": "games/watering/v1/index.html",
+          "notes": "收錄自 GitHub mandysu-beep/Self-made-mini-game（2026-11-26 上傳），原檔名「澆花.html」，程式未修改",
+          "source": "GitHub mandysu-beep/Self-made-mini-game",
+          "changes": []
+        }
+      ],
+      "guesses": [
+        "主分類「因果入門」、難度「入門」為推測"
+      ],
+      "status": "ok",
+      "known_missing": [],
+      "defaultVersion": "v1",
+      "cover": "assets/covers/watering.jpg"
+    },
+    {
+      "id": "apple-tree",
+      "title": "蘋果樹",
+      "subtitle": "水果園採果樂",
+      "category": "fixation",
+      "goals": [
+        "凝視選取",
+        "定點停留"
+      ],
+      "tags": {
+        "input": [
+          "dwell"
+        ],
+        "difficulty": [
+          "beginner",
+          "intermediate"
+        ]
+      },
+      "summary": "視線停在蘋果上，橘色進度圈跑滿就採收，完全不用點擊。",
+      "levels": "蘋果數量與凝視秒數可調（預設 3 顆、1.0 秒）；可切一棵大樹或兩棵樹",
+      "offline": true,
+      "offline_note": "完全可離線",
+      "source": {
+        "label": "Self-made-mini-game／蘋果樹.html",
+        "url": "https://github.com/mandysu-beep/Self-made-mini-game/blob/main/%E8%98%8B%E6%9E%9C%E6%A8%B9.html"
+      },
+      "versions": [
+        {
+          "id": "v1",
+          "label": "收錄版",
+          "date": "2026-11-26",
+          "path": "games/apple-tree/v1/index.html",
+          "notes": "收錄自 GitHub mandysu-beep/Self-made-mini-game（2026-11-26 上傳），原檔名「蘋果樹.html」。只移除檔尾一行 Cloudflare 流量統計程式（原檔從 Cloudflare 網頁另存時帶入，離開原網站會回報錯誤），遊戲程式未修改",
+          "source": "GitHub mandysu-beep/Self-made-mini-game",
+          "changes": []
+        }
+      ],
+      "guesses": [
+        "主分類「凝視選取」與難度為推測"
+      ],
+      "status": "ok",
+      "known_missing": [],
+      "defaultVersion": "v1",
+      "cover": "assets/covers/apple-tree.jpg"
+    },
+    {
+      "id": "watermelon",
+      "title": "西瓜田",
+      "subtitle": "水果園採果樂",
+      "category": "fixation",
+      "goals": [
+        "凝視選取",
+        "定點停留"
+      ],
+      "tags": {
+        "input": [
+          "dwell"
+        ],
+        "difficulty": [
+          "beginner",
+          "intermediate"
+        ]
+      },
+      "summary": "視線停在西瓜上，進度圈跑滿就採收，視線移開會重新計算。",
+      "levels": "西瓜數量與凝視秒數可調（預設 3 顆、1.0 秒）",
+      "offline": true,
+      "offline_note": "完全可離線",
+      "source": {
+        "label": "Self-made-mini-game／西瓜田.html",
+        "url": "https://github.com/mandysu-beep/Self-made-mini-game/blob/main/%E8%A5%BF%E7%93%9C%E7%94%B0.html"
+      },
+      "versions": [
+        {
+          "id": "v1",
+          "label": "收錄版",
+          "date": "2026-11-26",
+          "path": "games/watermelon/v1/index.html",
+          "notes": "收錄自 GitHub mandysu-beep/Self-made-mini-game（2026-11-26 上傳），原檔名「西瓜田.html」。只移除檔尾一行 Cloudflare 流量統計程式（原檔從 Cloudflare 網頁另存時帶入，離開原網站會回報錯誤），遊戲程式未修改",
+          "source": "GitHub mandysu-beep/Self-made-mini-game",
+          "changes": []
+        }
+      ],
+      "guesses": [
+        "主分類「凝視選取」與難度為推測"
+      ],
+      "status": "ok",
+      "known_missing": [],
+      "defaultVersion": "v1",
+      "cover": "assets/covers/watermelon.jpg"
+    },
+    {
+      "id": "ant-food",
+      "title": "螞蟻搬食物",
+      "category": "tracking",
+      "goals": [
+        "視覺追蹤",
+        "維持注視"
+      ],
+      "tags": {
+        "input": [
+          "dwell"
+        ],
+        "difficulty": [
+          "beginner",
+          "intermediate"
+        ]
+      },
+      "summary": "注視螞蟻，牠就把食物搬回洞穴；視線離開就停下。",
+      "levels": "目標隻數 1–10；凝視秒數 0.2–1.0 秒可調（預設 0.5 秒）",
+      "offline": false,
+      "offline_note": "需連網：Tailwind CDN、Google Fonts",
+      "source": {
+        "label": "Self-made-mini-game／螞蟻搬食物.html",
+        "url": "https://github.com/mandysu-beep/Self-made-mini-game/blob/main/%E8%9E%9E%E8%9F%BB%E6%90%AC%E9%A3%9F%E7%89%A9.html"
+      },
+      "versions": [
+        {
+          "id": "v1",
+          "label": "收錄版",
+          "date": "2026-11-26",
+          "path": "games/ant-food/v1/index.html",
+          "notes": "收錄自 GitHub mandysu-beep/Self-made-mini-game（2026-11-26 上傳），原檔名「螞蟻搬食物.html」，程式未修改",
+          "source": "GitHub mandysu-beep/Self-made-mini-game",
+          "changes": []
+        }
+      ],
+      "status": "ok",
+      "guesses": [],
+      "known_missing": [],
+      "defaultVersion": "v1",
+      "cover": "assets/covers/ant-food.jpg"
+    },
+    {
+      "id": "color-sort",
+      "title": "顏色分類小遊戲",
+      "category": "matching",
+      "goals": [
+        "顏色分類",
+        "選擇",
+        "移動控制"
+      ],
+      "tags": {
+        "input": [
+          "dwell",
+          "click",
+          "magnet"
+        ],
+        "difficulty": [
+          "intermediate",
+          "advanced"
+        ]
+      },
+      "summary": "看物件的顏色，把它送進同色籃子。主題有水果、海洋生物、恐龍。",
+      "levels": "顏色 2／3／4 種；物件 3–8 公分；可開磁吸；凝視 0.4–1.2 秒",
+      "offline": true,
+      "offline_note": "完全可離線（圖與音效內嵌，檔案約 11 MB，第一次開啟較慢）",
+      "source": {
+        "label": "Self-made-mini-game／顏色分類小遊戲_V9.html",
+        "url": "https://github.com/mandysu-beep/Self-made-mini-game/blob/main/%E9%A1%8F%E8%89%B2%E5%88%86%E9%A1%9E%E5%B0%8F%E9%81%8A%E6%88%B2_V9.html"
+      },
+      "versions": [
+        {
+          "id": "v9",
+          "label": "V9（沿用原檔名版號）",
+          "date": "2026-11-26",
+          "path": "games/color-sort/v9/index.html",
+          "notes": "收錄自 GitHub mandysu-beep/Self-made-mini-game（2026-11-26 上傳），原檔名「顏色分類小遊戲_V9.html」，程式未修改。版本代號沿用老師的 V9，下一版建議為 v10",
+          "source": "GitHub mandysu-beep/Self-made-mini-game",
+          "changes": []
+        }
+      ],
+      "guesses": [
+        "版本代號用 v9（沿用檔名），而不是 v1，待確認"
+      ],
+      "status": "ok",
+      "known_missing": [],
+      "defaultVersion": "v9",
+      "cover": "assets/covers/color-sort.jpg"
+    },
+    {
+      "id": "puzzle",
+      "title": "眼控友善磁吸拼圖",
+      "category": "matching",
+      "goals": [
+        "視覺配對",
+        "精細定位"
+      ],
+      "tags": {
+        "input": [
+          "click",
+          "magnet"
+        ],
+        "difficulty": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ]
+      },
+      "summary": "拿起拼圖放到中央底板，靠近正確位置會自動吸上去；可上傳自己的圖。",
+      "levels": "片數 2／4／6／9／12／16（預設 9 片）",
+      "offline": false,
+      "offline_note": "預設圖片來自 Unsplash，需連網；上傳自己的圖則可離線",
+      "source": {
+        "label": "muve-education/puzzle",
+        "url": "https://github.com/muve-education/puzzle"
+      },
+      "versions": [
+        {
+          "id": "v1",
+          "label": "收錄版",
+          "date": "2026-09-17",
+          "path": "games/puzzle/v1/index.html",
+          "notes": "收錄 GitHub muve-education/puzzle 最新提交 22949f6（2026-09-17）的 index.html，程式未修改",
+          "source": "https://muve-education.github.io/puzzle/",
+          "changes": []
+        }
+      ],
+      "status": "ok",
+      "guesses": [],
+      "known_missing": [],
+      "defaultVersion": "v1",
+      "cover": "assets/covers/puzzle.jpg"
+    },
+    {
+      "id": "playground",
+      "title": "小小遊樂園",
+      "category": "adventure",
+      "goals": [
+        "著色",
+        "視覺追蹤",
+        "探索",
+        "節奏"
+      ],
+      "tags": {
+        "input": [
+          "dwell",
+          "click"
+        ],
+        "difficulty": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ]
+      },
+      "summary": "三大類 30 關：彩繪、探險（貪食蛇、迷宮、追視）、音樂接音符。",
+      "levels": "每類 10 關由易到難；游標、物件大小、速度、背景、語音可調",
+      "offline": true,
+      "offline_note": "完全可離線（canvas 繪圖、Web Audio 音樂）",
+      "source": {
+        "label": "accessible-game-site.netlify.app",
+        "url": "https://accessible-game-site.netlify.app/"
+      },
+      "versions": [
+        {
+          "id": "v1",
+          "label": "收錄版",
+          "date": "2026-11-26",
+          "path": "games/playground/v1/index.html",
+          "notes": "2026-11-26 從 Netlify 線上版抓取。只移除 Netlify 主機自動插入的兩行 /.netlify/scripts 標籤（離開 Netlify 會 404），遊戲程式未修改",
+          "source": "https://accessible-game-site.netlify.app/",
+          "changes": []
+        }
+      ],
+      "guesses": [
+        "放在「綜合闖關」，因為一站含多種學習目標"
+      ],
+      "status": "ok",
+      "known_missing": [],
+      "defaultVersion": "v1",
+      "cover": "assets/covers/playground.jpg"
+    },
+    {
+      "id": "carwash",
+      "title": "洗車遊戲",
+      "category": "daily",
+      "goals": [
+        "因果",
+        "選擇",
+        "動作序列"
+      ],
+      "tags": {
+        "input": [
+          "click"
+        ],
+        "difficulty": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ]
+      },
+      "summary": "沖水、搓泡泡、刷洗、擦乾，把車子洗乾淨。",
+      "levels": "1／2／4／6 格分級；汙漬數量與大小、背景可調",
+      "offline": true,
+      "offline_note": "完全可離線（SVG 畫在檔內）",
+      "source": {
+        "label": "目目遊戲 · 版本總覽",
+        "url": "https://muvenpo-game.netlify.app/"
+      },
+      "versions": [
+        {
+          "id": "v1",
+          "label": "初版",
+          "date": "2026-07-15",
+          "path": "games/carwash/v1/index.html",
+          "notes": "1／2／4／6 格分級、點擊操作",
+          "source": "https://muvenpo-game.netlify.app/carwash-game",
+          "changes": []
+        },
+        {
+          "id": "v2",
+          "label": "依回饋修改",
+          "date": "2026-08-13",
+          "path": "games/carwash/v2/index.html",
+          "notes": "依「AI製作遊戲修改」回饋文件修改",
+          "source": "https://muvenpo-game.netlify.app/carwash-game-v2",
+          "changes": [
+            "新增 4 種車款與 6 種車色，可上傳車子圖",
+            "車子、汙漬、泡泡、水滴可放到「超大」",
+            "加入噴水、擦乾動畫",
+            "4／6 格改為點選直筒刷自動刷洗",
+            "可上傳背景"
+          ]
+        }
+      ],
+      "status": "ok",
+      "guesses": [],
+      "known_missing": [],
+      "defaultVersion": "v2",
+      "cover": "assets/covers/carwash.jpg"
+    },
+    {
+      "id": "dressup",
+      "title": "換裝遊戲",
+      "category": "daily",
+      "goals": [
+        "選擇",
+        "因果"
+      ],
+      "tags": {
+        "input": [
+          "click"
+        ],
+        "difficulty": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ]
+      },
+      "summary": "幫小奇、小美、小安換上日常、派對或運動服裝。",
+      "levels": "1／2／4／6 格分級；人物、主題、箭頭與衣服大小可調",
+      "offline": true,
+      "offline_note": "完全可離線",
+      "source": {
+        "label": "目目遊戲 · 版本總覽",
+        "url": "https://muvenpo-game.netlify.app/"
+      },
+      "versions": [
+        {
+          "id": "v1",
+          "label": "初版",
+          "date": "2026-07-15",
+          "path": "games/dressup/v1/index.html",
+          "notes": "1／2／4／6 格分級、點擊操作",
+          "source": "https://muvenpo-game.netlify.app/dressup-game",
+          "changes": []
+        },
+        {
+          "id": "v2",
+          "label": "依回饋修改",
+          "date": "2026-08-13",
+          "path": "games/dressup/v2/index.html",
+          "notes": "依回饋文件修改；2／4／6 格版面調整仍待規格",
+          "source": "https://muvenpo-game.netlify.app/dressup-game-v2",
+          "changes": [
+            "開始前可先選人物、再選衣服主題",
+            "箭頭與衣服大小可選「用原本大小」",
+            "可上傳背景",
+            "修正帽子被頭髮蓋住"
+          ]
+        }
+      ],
+      "status": "ok",
+      "guesses": [],
+      "known_missing": [],
+      "defaultVersion": "v2",
+      "cover": "assets/covers/dressup.jpg"
+    },
+    {
+      "id": "cooking",
+      "title": "料理遊戲",
+      "category": "daily",
+      "goals": [
+        "動作序列",
+        "選擇",
+        "定位"
+      ],
+      "tags": {
+        "input": [
+          "click",
+          "dwell"
+        ],
+        "difficulty": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ]
+      },
+      "summary": "依步驟點食材、器具、調味，做炒蛋、蔬菜湯或鬆餅。",
+      "levels": "1／2／4／6 格分級；v2 可改用凝視停留（0.4–4 秒）",
+      "offline": true,
+      "offline_note": "完全可離線",
+      "source": {
+        "label": "目目遊戲 · 版本總覽",
+        "url": "https://muvenpo-game.netlify.app/"
+      },
+      "versions": [
+        {
+          "id": "v1",
+          "label": "初版",
+          "date": "2026-07-15",
+          "path": "games/cooking/v1/index.html",
+          "notes": "1／2／4／6 格分級、點擊操作",
+          "source": "https://muvenpo-game.netlify.app/cooking-game",
+          "changes": []
+        },
+        {
+          "id": "v2",
+          "label": "依回饋修改",
+          "date": "2026-08-13",
+          "path": "games/cooking/v2/index.html",
+          "notes": "依回饋文件修改；4／6 格版面仍待規格",
+          "source": "https://muvenpo-game.netlify.app/cooking-game-v2",
+          "changes": [
+            "新增「視線停留」觸發，有進度圈",
+            "可選透明無邊框格子",
+            "每步加上攪拌、撒鹽、倒入、翻面動畫",
+            "目標物可放到「超大」，可上傳背景"
+          ]
+        }
+      ],
+      "input_note": "凝視停留只有 v2 有",
+      "status": "ok",
+      "guesses": [],
+      "known_missing": [],
+      "defaultVersion": "v2",
+      "cover": "assets/covers/cooking.jpg"
+    },
+    {
+      "id": "painting",
+      "title": "眼動著色",
+      "category": "create",
+      "goals": [
+        "著色",
+        "自由創作"
+      ],
+      "tags": {
+        "input": [
+          "click"
+        ],
+        "difficulty": [
+          "beginner"
+        ]
+      },
+      "summary": "游標移到著色區就上色，可換圖案、顏色、筆種與大小。",
+      "levels": "圖案、顏色、筆種、筆刷大小可調",
+      "offline": true,
+      "offline_note": "完全可離線",
+      "source": {
+        "label": "muve-education/painting",
+        "url": "https://github.com/muve-education/painting"
+      },
+      "versions": [
+        {
+          "id": "v1",
+          "label": "收錄版",
+          "date": "2026-10-07",
+          "path": "games/painting/v1/index.html",
+          "notes": "收錄 GitHub muve-education/painting 最新提交 bd61d71（2026-10-07）的 index.html，程式未修改",
+          "source": "https://muve-education.github.io/painting/",
+          "changes": []
+        }
+      ],
+      "input_note": "游標經過即上色（不需停留），按鈕用點擊",
+      "guesses": [
+        "操作方式標「點擊」：它是游標經過就上色，不屬於凝視停留或磁吸"
+      ],
+      "status": "ok",
+      "known_missing": [],
+      "defaultVersion": "v1",
+      "cover": "assets/covers/painting.jpg"
+    },
+    {
+      "id": "camera",
+      "title": "眼動拍照",
+      "category": "create",
+      "goals": [
+        "自由創作",
+        "因果"
+      ],
+      "tags": {
+        "input": [
+          "click"
+        ],
+        "difficulty": [
+          "beginner"
+        ]
+      },
+      "summary": "開啟相機，用點擊拍照，有倒數、切換鏡頭與查看照片。這是工具，不是關卡遊戲。",
+      "levels": "倒數秒數、版面大小可調",
+      "offline": true,
+      "offline_note": "可離線，但需要相機權限（站內播放器已允許相機）",
+      "source": {
+        "label": "muve-education/camera",
+        "url": "https://github.com/muve-education/camera"
+      },
+      "versions": [
+        {
+          "id": "v1",
+          "label": "收錄版",
+          "date": "2026-10-06",
+          "path": "games/camera/v1/index.html",
+          "notes": "收錄 GitHub muve-education/camera 最新提交 7dfeb62（2026-10-06）的 index.html，程式未修改",
+          "source": "https://muve-education.github.io/camera/",
+          "changes": []
+        }
+      ],
+      "guesses": [
+        "主分類「創作表達」與難度為推測"
+      ],
+      "status": "ok",
+      "known_missing": [],
+      "defaultVersion": "v1",
+      "cover": "assets/covers/camera.jpg"
+    },
+    {
+      "id": "taiwan-art",
+      "title": "台灣藝術尋寶",
+      "subtitle": "藝術環島之旅",
+      "category": "adventure",
+      "goals": [
+        "藝術認知",
+        "探索"
+      ],
+      "tags": {
+        "input": [
+          "click"
+        ],
+        "difficulty": [
+          "intermediate"
+        ]
+      },
+      "summary": "與光魔法師、阿目走訪北中南東，認識黃土水、朱銘、日月潭九蛙等作品。",
+      "levels": "北、中、南、東四區關卡",
+      "offline": true,
+      "offline_note": "素材與遊戲放在同一資料夾",
+      "status": "partial",
+      "known_missing": [
+        "char_amu.png",
+        "char_magician.png",
+        "bgm_main.mp3",
+        "se_brush.mp3",
+        "se_chisel.mp3",
+        "se_click.mp3",
+        "se_fail.mp3",
+        "se_success.mp3"
+      ],
+      "source": {
+        "label": "muve-education/taiwan-art-game",
+        "url": "https://github.com/muve-education/taiwan-art-game"
+      },
+      "versions": [
+        {
+          "id": "v1",
+          "label": "收錄版（素材不完整）",
+          "date": "2026-11-26",
+          "path": "games/taiwan-art/v1/index.html",
+          "notes": "收錄 GitHub muve-education/taiwan-art-game 最新提交 eb02d3b（2026-11-26）的 index.html 與 8 個圖檔，程式未修改。缺角色圖 2 張與音效 6 個（原倉庫也沒有）",
+          "source": "https://muve-education.github.io/taiwan-art-game/",
+          "changes": []
+        }
+      ],
+      "guesses": [
+        "主分類「綜合闖關」、難度「中等」為推測"
+      ],
+      "defaultVersion": "v1",
+      "cover": "assets/covers/taiwan-art.jpg"
+    },
+    {
+      "id": "lunar-new-year",
+      "title": "農曆新年眼動遊戲",
+      "category": "adventure",
+      "goals": [
+        "主題：春節"
+      ],
+      "tags": {
+        "input": [],
+        "difficulty": []
+      },
+      "summary": "Canva 網站，內容是 Canva Code 互動元件，無法抓取原始檔，只能開外部連結。",
+      "levels": "未知",
+      "offline": false,
+      "offline_note": "需連網，Canva 託管",
+      "status": "external",
+      "external_url": "https://puffin-kgclyk.my.canva.site/dahbs8ustqs",
+      "source": {
+        "label": "Canva 網站",
+        "url": "https://puffin-kgclyk.my.canva.site/dahbs8ustqs"
+      },
+      "versions": [],
+      "defaultVersion": null,
+      "guesses": [
+        "分類未知，暫放「綜合闖關」，取得原始檔後再補"
+      ],
+      "known_missing": [],
+      "cover": null
+    }
+  ]
+}
