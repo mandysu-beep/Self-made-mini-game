@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>開心小花園 - 眼動澆水訓練遊戲</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kosugi+Maru&family=M+PLUS+Rounded+1c:wght@500;700;800&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      box-sizing: border-box;
+      font-family: 'M PLUS Rounded 1c', 'Kosugi Maru', 'Nunito', sans-serif;
+    }
+
+    /* 動物森友會柔和清新色調與天空質感 */
+    body {
+      background: linear-gradient(180deg, #7ad5f5 0%, #a6e7ff 50%, #c4f3d4 85%);
+      overflow: hidden;
+      touch-action: manipulation;
+    }
+
+    /* 雲朵漂浮動畫 */
+    @keyframes floatCloud {
+      0% { transform: translateX(-150px); }
+      100% { transform: translateX(calc(100vw + 150px)); }
+    }
+    .cloud-slow { animation: floatCloud 45s linear infinite; }
+    .cloud-fast { animation: floatCloud 30s linear infinite; }
+
+    /* 草原三角形紋理 (Animal Crossing 草地特徵三角暗紋) */
+    .ac-grass-pattern {
+      background-color: #72ca45;
+      background-image: radial-gradient(#5dae34 18%, transparent 19%),
+                        radial-gradient(#5dae34 18%, transparent 19%);
+      background-size: 28px 28px;
+      background-position: 0 0, 14px 14px;
+    }
+
+    /* 澆水後草地更鮮綠水潤 */
+    .ac-grass-watered {
+      background-color: #55b729;
+      background-image: radial-gradient(#3f9818 20%, transparent 21%),
+                        radial-gradient(#3f9818 20%, transparent 21%);
+    }
+
+    /* 土壤橫切面紋理 */
+    .soil-dry {
+      background: #a07449;
+      box-shadow: inset 0 8px 12px rgba(0,0,0,0.18);
+      transition: background 0.8s ease, filter 0.8s ease;
+    }
+    .soil-wet {
+      background: #644426;
+      box-shadow: inset 0 10px 18px rgba(0,0,0,0.35);
+      filter: saturate(1.15) brightness(0.92);
+    }
+
+    /* 蚯蚓蠕動動畫 */
+    @keyframes wormWiggle {
+      0%, 100% { transform: rotate(0deg) scale(1, 1); }
+      25% { transform: rotate(-5deg) scale(1.08, 0.92); }
+      50% { transform: rotate(3deg) scale(0.94, 1.06); }
+      75% { transform: rotate(-3deg) scale(1.04, 0.96); }
+    }
+    .worm-wiggle {
+      animation: wormWiggle 3.2s ease-in-out infinite;
+      transform-origin: center center;
+    }
+    .worm-happy {
+      animation: wormWiggle 1.4s ease-in-out infinite;
+    }
+
+    /* 水珠閃爍 (動森閃閃亮光效果) */
+    @keyframes sparkleGleam {
+      0%, 100% { opacity: 0.2; transform: scale(0.7) rotate(0deg); }
+      50% { opacity: 1; transform: scale(1.3) rotate(45deg); filter: drop-shadow(0 0 5px rgba(255,255,255,0.9)); }
+    }
+    .sparkle {
+      animation: sparkleGleam 2s ease-in-out infinite;
+    }
+
+    /* 真實多道蓮蓬頭噴灑水流動畫 */
+    @keyframes waterSprayFlow {
+      0% {
+        stroke-dashoffset: 60;
+        opacity: 0;
+      }
+      20% {
+        opacity: 0.95;
+      }
+      80% {
+        opacity: 0.95;
+      }
+      100% {
+        stroke-dashoffset: 0;
+        opacity: 0.2;
+      }
+    }
+    .water-droplet-stream {
+      stroke-dasharray: 6 12;
+      animation: waterSprayFlow 0.45s linear infinite;
+    }
+    .water-droplet-stream:nth-child(2) { animation-delay: 0.08s; }
+    .water-droplet-stream:nth-child(3) { animation-delay: 0.16s; }
+    .water-droplet-stream:nth-child(4) { animation-delay: 0.24s; }
+    .water-droplet-stream:nth-child(5) { animation-delay: 0.32s; }
+
+    /* 水滴飛濺微粒子 */
+    @keyframes dropBounce {
+      0% { transform: translateY(0) scale(0.6); opacity: 0; }
+      40% { opacity: 1; transform: translateY(12px) scale(1.1); }
+      100% { transform: translateY(30px) scale(0.4); opacity: 0; }
+    }
+    .splash-drop {
+      animation: dropBounce 0.5s ease-out infinite;
+    }
+
+    /* 手與水壺的傾斜動作 */
+    .can-group {
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-origin: 65% 70%;
+    }
+    .can-watering {
+      transform: rotate(-32deg) translateY(12px) scale(1.06);
+    }
+
+    /* 浮空愛心/音符 */
+    @keyframes floatUpFade {
+      0% { transform: translateY(0) scale(0.6); opacity: 0; }
+      30% { opacity: 1; transform: translateY(-16px) scale(1.1); }
+      100% { transform: translateY(-46px) scale(1.2); opacity: 0; }
+    }
+    .float-heart {
+      animation: floatUpFade 2s ease-out forwards;
+    }
+
+    /* 環狀凝視計時器動畫 (SVG Stroke Dashoffset) */
+    .gaze-circle {
+      transition: stroke-dashoffset 0.1s linear, stroke 0.3s ease;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+
+    /* 自定義捲軸 */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #88d49e;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+
+<body class="w-screen h-screen flex flex-col justify-between select-none relative overflow-hidden">
+
+  <!-- 天空背景裝飾：雲朵與太陽 -->
+  <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
+    <!-- 暖心太陽 -->
+    <div class="absolute top-4 right-8 w-20 h-20 md:w-28 md:h-28 bg-amber-300 rounded-full flex items-center justify-center shadow-lg shadow-amber-200/60 animate-pulse">
+      <div class="w-14 h-14 md:w-20 md:h-20 bg-yellow-400 rounded-full flex items-center justify-center">
+        <span class="text-2xl md:text-3xl">🌻</span>
+      </div>
+    </div>
+    
+    <!-- 雲朵 -->
+    <div class="cloud-slow absolute top-10 -left-40 opacity-80">
+      <svg width="150" height="70" viewBox="0 0 150 70" fill="white">
+        <path d="M20,55 Q5,55 5,40 Q5,25 25,25 Q35,10 55,15 Q75,5 95,20 Q115,10 130,30 Q145,35 145,50 Q145,55 130,55 Z" rx="20"/>
+      </svg>
+    </div>
+    <div class="cloud-fast absolute top-24 -left-40 opacity-70" style="animation-delay: -15s;">
+      <svg width="110" height="50" viewBox="0 0 110 50" fill="white">
+        <path d="M15,40 Q5,40 5,30 Q5,18 20,18 Q30,8 45,12 Q60,5 75,15 Q90,8 100,22 Q110,26 105,40 Z"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- 頂部資訊列：標題、提示、進度指示器與教師設定按鈕 -->
+  <header class="relative z-20 w-full px-4 pt-3 flex items-center justify-between pointer-events-auto">
+    <!-- 左側進度徽章 -->
+    <div class="flex items-center gap-2 bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-md border-2 border-emerald-300">
+      <span class="text-xl">💧</span>
+      <span class="text-emerald-800 font-extrabold text-sm md:text-base tracking-wide">澆水進度：</span>
+      <div class="flex gap-1.5" id="progressBadges">
+        <span id="badge-left" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-300">左區 待澆</span>
+        <span id="badge-mid" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-300">中區 待澆</span>
+        <span id="badge-right" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-300">右區 待澆</span>
+      </div>
+    </div>
+
+    <!-- 中間提示標語 (大字易辨識，適合特教引導) -->
+    <div class="hidden sm:flex items-center bg-emerald-600/90 text-white px-5 py-2 rounded-full shadow-lg border-2 border-emerald-400">
+      <span class="text-lg mr-2 animate-bounce">👀</span>
+      <span id="instructionText" class="text-sm md:text-base font-bold">看著你想澆水的區域，壺壺就會自動倒水唷！</span>
+    </div>
+
+    <!-- 右側功能按鈕：重置 & 老師面板 -->
+    <div class="flex items-center gap-2">
+      <button id="btnReset" class="flex items-center gap-1.5 bg-amber-400 hover:bg-amber-500 active:scale-95 text-amber-950 font-bold px-3 py-2 rounded-2xl shadow transition border-2 border-amber-300 text-xs md:text-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+        <span>重新玩</span>
+      </button>
+
+      <button id="btnSettings" class="flex items-center gap-1.5 bg-white/95 hover:bg-white active:scale-95 text-slate-800 font-bold px-3.5 py-2 rounded-2xl shadow transition border-2 border-slate-300 text-xs md:text-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+        <span>老師設定</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 核心遊戲畫面：左、中、右 三大區域 -->
+  <main class="relative z-10 w-full flex-1 flex flex-col justify-end max-w-7xl mx-auto px-2 md:px-6 pb-0">
+    <div class="grid grid-cols-3 gap-2 md:gap-4 h-full max-h-[82vh] items-end">
+      
+      <!-- ====================== 左區 (ZONE 1) ====================== -->
+      <section id="zone-left" class="garden-zone group relative flex flex-col h-full justify-end cursor-pointer transition-all duration-300" data-zone="left">
+        <!-- 上方：凝視目標與澆花壺區 -->
+        <div class="flex-1 flex flex-col items-center justify-center relative min-h-[160px] md:min-h-[220px]">
+          <!-- 凝視進度環 (純淨無字) -->
+          <div class="gaze-container absolute flex items-center justify-center pointer-events-none z-30">
+            <svg class="w-32 h-32 md:w-44 md:h-44" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" stroke="#ffffff" stroke-width="8" fill="rgba(255,255,255,0.2)" class="shadow-sm"/>
+              <circle id="ring-left" class="gaze-circle" cx="60" cy="60" r="50" stroke="#06b6d4" stroke-width="8" stroke-linecap="round" fill="none" stroke-dasharray="314.16" stroke-dashoffset="314.16"/>
+            </svg>
+          </div>
+
+          <!-- 手 + 澆水壺 SVG -->
+          <div id="can-wrapper-left" class="can-group relative z-20 transition-transform flex items-center justify-center">
+            <!-- 多道動態真實噴灑水流 (蓮蓬頭水滴串) -->
+            <svg id="water-stream-left" class="absolute -left-16 top-16 w-36 h-48 hidden pointer-events-none z-10" viewBox="0 0 140 180">
+              <!-- 5條噴水弧線，由蓮蓬孔放射噴灑 -->
+              <path class="water-droplet-stream" d="M110 30 Q70 70 45 170" stroke="#38bdf8" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+              <path class="water-droplet-stream" d="M106 33 Q60 75 30 170" stroke="#7dd3fc" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <path class="water-droplet-stream" d="M114 27 Q82 65 65 170" stroke="#0284c7" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path class="water-droplet-stream" d="M102 36 Q50 85 15 170" stroke="#bae6fd" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <path class="water-droplet-stream" d="M118 25 Q95 65 85 170" stroke="#38bdf8" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <!-- 噴嘴處水滴飛濺粒子 -->
+              <circle class="splash-drop" cx="42" cy="165" r="3.5" fill="#38bdf8"/>
+              <circle class="splash-drop" cx="62" cy="168" r="4" fill="#0284c7" style="animation-delay: 0.15s;"/>
+              <circle class="splash-drop" cx="24" cy="162" r="3" fill="#7dd3fc" style="animation-delay: 0.3s;"/>
+            </svg>
+            
+            <!-- 手持小水壺 -->
+            <svg class="w-28 h-28 md:w-40 md:h-40 drop-shadow-xl" viewBox="0 0 160 160">
+              <ellipse cx="120" cy="38" rx="20" ry="15" fill="#fcd34d" stroke="#d97706" stroke-width="3"/>
+              <circle cx="106" cy="48" r="9" fill="#fcd34d" stroke="#d97706" stroke-width="2.5"/>
+              <path d="M38 78 L12 60 L18 52 L48 68 Z" fill="#2dd4bf" stroke="#0f766e" stroke-width="3"/>
+              <ellipse cx="13" cy="56" rx="9" ry="6" fill="#fde047" stroke="#ca8a04" stroke-width="2"/>
+              <rect x="42" y="65" width="68" height="52" rx="14" fill="#14b8a6" stroke="#0f766e" stroke-width="3.5"/>
+              <circle cx="76" cy="91" r="14" fill="#fef08a"/>
+              <circle cx="76" cy="91" r="6" fill="#f97316"/>
+              <path d="M108 72 C132 72 132 110 108 112" fill="none" stroke="#0f766e" stroke-width="8" stroke-linecap="round"/>
+              <path d="M108 72 C132 72 132 110 108 112" fill="none" stroke="#5eead4" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 中層：草皮與花朵 -->
+        <div id="grass-left" class="ac-grass-pattern w-full h-24 md:h-32 rounded-t-3xl border-t-4 border-emerald-400 relative flex items-end justify-center pb-2 transition-colors duration-700">
+          <div class="absolute -top-3 left-4 text-emerald-600 text-lg md:text-xl font-black">▲ ▲ ▲</div>
+          <div class="absolute -top-3 right-6 text-emerald-600 text-lg md:text-xl font-black">▲ ▲</div>
+
+          <div id="flowers-left" class="relative z-10 flex items-end gap-2 md:gap-5 transition-transform duration-500">
+            <div class="flower-item flex flex-col items-center">
+              <div class="flower-bloom text-4xl md:text-5xl transition-transform duration-500 scale-90 -mb-1">🌷</div>
+              <div class="w-2.5 h-6 bg-emerald-600 rounded-full"></div>
+            </div>
+            <div class="flower-item flex flex-col items-center">
+              <div class="flower-bloom text-3xl md:text-4xl transition-transform duration-500 scale-90 -mb-1">🌼</div>
+              <div class="w-2 h-5 bg-emerald-600 rounded-full"></div>
+            </div>
+            <div class="flower-item flex flex-col items-center">
+              <div class="flower-bloom text-4xl md:text-5xl transition-transform duration-500 scale-90 -mb-1">🌸</div>
+              <div class="w-2.5 h-7 bg-emerald-600 rounded-full"></div>
+            </div>
+          </div>
+
+          <div id="dew-left" class="absolute inset-0 pointer-events-none hidden">
+            <span class="sparkle absolute top-3 left-6 text-white text-base md:text-xl font-black">✧</span>
+            <span class="sparkle absolute top-6 right-10 text-cyan-200 text-lg md:text-2xl font-black" style="animation-delay: 0.7s;">✦</span>
+            <span class="sparkle absolute top-2 right-4 text-white text-xs md:text-base font-black" style="animation-delay: 1.2s;">✧</span>
+          </div>
+        </div>
+
+        <!-- 底層：泥土橫切面與蚯蚓 (純淨無字) -->
+        <div id="soil-left" class="soil-dry w-full h-28 md:h-36 rounded-b-2xl p-2 relative flex flex-col justify-between overflow-hidden border-t-2 border-stone-800/20">
+          <div class="absolute w-3 h-2 bg-stone-700/40 rounded-full top-8 left-6"></div>
+          <div class="absolute w-4 h-2.5 bg-stone-600/30 rounded-full bottom-4 right-8"></div>
+          
+          <div id="worm-left-1" class="worm-wiggle absolute bottom-4 left-6 flex items-center">
+            <svg class="w-14 h-8 md:w-20 md:h-10 drop-shadow" viewBox="0 0 100 50">
+              <path d="M10 25 Q 30 5, 50 25 T 90 25" fill="none" stroke="#f472b6" stroke-width="12" stroke-linecap="round"/>
+              <circle cx="86" cy="23" r="2" fill="#831843"/>
+              <circle cx="80" cy="27" r="2.5" fill="#fbcfe8"/>
+            </svg>
+            <span id="heart-left" class="hidden absolute -top-4 right-0 text-base">💖</span>
+          </div>
+          <div class="worm-wiggle absolute top-7 right-4" style="animation-delay: -1.5s;">
+            <svg class="w-10 h-7 md:w-14 md:h-8 opacity-90" viewBox="0 0 70 40">
+              <path d="M10 30 Q 35 10, 60 30" fill="none" stroke="#fb7185" stroke-width="10" stroke-linecap="round"/>
+              <circle cx="58" cy="28" r="1.8" fill="#4c0519"/>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================== 中區 (ZONE 2) ====================== -->
+      <section id="zone-mid" class="garden-zone group relative flex flex-col h-full justify-end cursor-pointer transition-all duration-300" data-zone="mid">
+        <!-- 上方：凝視目標與澆花壺區 -->
+        <div class="flex-1 flex flex-col items-center justify-center relative min-h-[160px] md:min-h-[220px]">
+          <!-- 凝視進度環 (純淨無字) -->
+          <div class="gaze-container absolute flex items-center justify-center pointer-events-none z-30">
+            <svg class="w-32 h-32 md:w-44 md:h-44" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" stroke="#ffffff" stroke-width="8" fill="rgba(255,255,255,0.2)" class="shadow-sm"/>
+              <circle id="ring-mid" class="gaze-circle" cx="60" cy="60" r="50" stroke="#3b82f6" stroke-width="8" stroke-linecap="round" fill="none" stroke-dasharray="314.16" stroke-dashoffset="314.16"/>
+            </svg>
+          </div>
+
+          <!-- 手 + 澆水壺 SVG -->
+          <div id="can-wrapper-mid" class="can-group relative z-20 transition-transform flex items-center justify-center">
+            <!-- 多道動態真實噴灑水流 -->
+            <svg id="water-stream-mid" class="absolute -left-16 top-16 w-36 h-48 hidden pointer-events-none z-10" viewBox="0 0 140 180">
+              <path class="water-droplet-stream" d="M110 30 Q70 70 45 170" stroke="#38bdf8" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+              <path class="water-droplet-stream" d="M106 33 Q60 75 30 170" stroke="#7dd3fc" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <path class="water-droplet-stream" d="M114 27 Q82 65 65 170" stroke="#0284c7" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path class="water-droplet-stream" d="M102 36 Q50 85 15 170" stroke="#bae6fd" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <path class="water-droplet-stream" d="M118 25 Q95 65 85 170" stroke="#38bdf8" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <circle class="splash-drop" cx="45" cy="165" r="3.5" fill="#38bdf8"/>
+              <circle class="splash-drop" cx="60" cy="168" r="4" fill="#0284c7" style="animation-delay: 0.15s;"/>
+              <circle class="splash-drop" cx="28" cy="162" r="3" fill="#7dd3fc" style="animation-delay: 0.3s;"/>
+            </svg>
+            
+            <svg class="w-28 h-28 md:w-40 md:h-40 drop-shadow-xl" viewBox="0 0 160 160">
+              <ellipse cx="120" cy="38" rx="20" ry="15" fill="#fcd34d" stroke="#d97706" stroke-width="3"/>
+              <circle cx="106" cy="48" r="9" fill="#fcd34d" stroke="#d97706" stroke-width="2.5"/>
+              <path d="M38 78 L12 60 L18 52 L48 68 Z" fill="#fb7185" stroke="#be123c" stroke-width="3"/>
+              <ellipse cx="13" cy="56" rx="9" ry="6" fill="#fef08a" stroke="#ca8a04" stroke-width="2"/>
+              <rect x="42" y="65" width="68" height="52" rx="14" fill="#f43f5e" stroke="#be123c" stroke-width="3.5"/>
+              <path d="M76 82 L79 89 L86 90 L81 95 L82 102 L76 98 L70 102 L71 95 L66 90 L73 89 Z" fill="#fef08a"/>
+              <path d="M108 72 C132 72 132 110 108 112" fill="none" stroke="#be123c" stroke-width="8" stroke-linecap="round"/>
+              <path d="M108 72 C132 72 132 110 108 112" fill="none" stroke="#fda4af" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 中層：草皮與花朵 -->
+        <div id="grass-mid" class="ac-grass-pattern w-full h-24 md:h-32 rounded-t-3xl border-t-4 border-emerald-400 relative flex items-end justify-center pb-2 transition-colors duration-700">
+          <div class="absolute -top-3 left-8 text-emerald-600 text-lg md:text-xl font-black">▲ ▲</div>
+          <div class="absolute -top-3 right-8 text-emerald-600 text-lg md:text-xl font-black">▲ ▲ ▲</div>
+
+          <div id="flowers-mid" class="relative z-10 flex items-end gap-3 md:gap-6 transition-transform duration-500">
+            <div class="flower-item flex flex-col items-center">
+              <div class="flower-bloom text-4xl md:text-5xl transition-transform duration-500 scale-90 -mb-1">🌻</div>
+              <div class="w-2.5 h-8 bg-emerald-600 rounded-full"></div>
+            </div>
+            <div class="flower-item flex flex-col items-center">
+              <div class="flower-bloom text-4xl md:text-5xl transition-transform duration-500 scale-90 -mb-1">🌹</div>
+              <div class="w-2.5 h-6 bg-emerald-600 rounded-full"></div>
+            </div>
+          </div>
+
+          <div id="dew-mid" class="absolute inset-0 pointer-events-none hidden">
+            <span class="sparkle absolute top-2 left-8 text-white text-base md:text-2xl font-black">✧</span>
+            <span class="sparkle absolute top-5 right-6 text-yellow-200 text-lg md:text-2xl font-black" style="animation-delay: 0.5s;">✦</span>
+            <span class="sparkle absolute top-7 left-14 text-cyan-200 text-sm md:text-base font-black" style="animation-delay: 1.1s;">✧</span>
+          </div>
+        </div>
+
+        <!-- 底層：泥土橫切面與蚯蚓 (純淨無字) -->
+        <div id="soil-mid" class="soil-dry w-full h-28 md:h-36 rounded-b-2xl p-2 relative flex flex-col justify-between overflow-hidden border-t-2 border-stone-800/20">
+          <div class="absolute w-3.5 h-2 bg-stone-700/40 rounded-full top-5 right-10"></div>
+          
+          <div id="worm-mid-1" class="worm-wiggle absolute bottom-5 right-8 flex items-center" style="animation-delay: -0.7s;">
+            <svg class="w-16 h-8 md:w-22 md:h-11 drop-shadow" viewBox="0 0 100 50">
+              <path d="M10 25 Q 30 45, 50 25 T 90 25" fill="none" stroke="#f472b6" stroke-width="12" stroke-linecap="round"/>
+              <circle cx="86" cy="23" r="2" fill="#831843"/>
+              <circle cx="80" cy="27" r="2.5" fill="#fbcfe8"/>
+            </svg>
+            <span id="heart-mid" class="hidden absolute -top-4 left-0 text-base">🎶</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================== 右區 (ZONE 3) ====================== -->
+      <section id="zone-right" class="garden-zone group relative flex flex-col h-full justify-end cursor-pointer transition-all duration-300" data-zone="right">
+        <!-- 上方：凝視目標與澆花壺區 -->
+        <div class="flex-1 flex flex-col items-center justify-center relative min-h-[160px] md:min-h-[220px]">
+          <!-- 凝視進度環 (純淨無字) -->
+          <div class="gaze-container absolute flex items-center justify-center pointer-events-none z-30">
+            <svg class="w-32 h-32 md:w-44 md:h-44" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" stroke="#ffffff" stroke-width="8" fill="rgba(255,255,255,0.2)" class="shadow-sm"/>
+              <circle id="ring-right" class="gaze-circle" cx="60" cy="60" r="50" stroke="#f59e0b" stroke-width="8" stroke-linecap="round" fill="none" stroke-dasharray="314.16" stroke-dashoffset="314.16"/>
+            </svg>
+          </div>
+
+          <!-- 手 + 澆水壺 SVG -->
+          <div id="can-wrapper-right" class="can-group relative z-20 transition-transform flex items-center justify-center">
+            <!-- 多道動態真實噴灑水流 -->
+            <svg id="water-stream-right" class="absolute -left-16 top-16 w-36 h-48 hidden pointer-events-none z-10" viewBox="0 0 140 180">
+              <path class="water-droplet-stream" d="M110 30 Q70 70 45 170" stroke="#38bdf8" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+              <path class="water-droplet-stream" d="M106 33 Q60 75 30 170" stroke="#7dd3fc" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <path class="water-droplet-stream" d="M114 27 Q82 65 65 170" stroke="#0284c7" stroke-width="4" fill="none" stroke-linecap="round"/>
+              <path class="water-droplet-stream" d="M102 36 Q50 85 15 170" stroke="#bae6fd" stroke-width="3" fill="none" stroke-linecap="round"/>
+              <path class="water-droplet-stream" d="M118 25 Q95 65 85 170" stroke="#38bdf8" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+              <circle class="splash-drop" cx="42" cy="165" r="3.5" fill="#38bdf8"/>
+              <circle class="splash-drop" cx="64" cy="168" r="4" fill="#0284c7" style="animation-delay: 0.15s;"/>
+              <circle class="splash-drop" cx="26" cy="162" r="3" fill="#7dd3fc" style="animation-delay: 0.3s;"/>
+            </svg>
+            
+            <svg class="w-28 h-28 md:w-40 md:h-40 drop-shadow-xl" viewBox="0 0 160 160">
+              <ellipse cx="120" cy="38" rx="20" ry="15" fill="#fcd34d" stroke="#d97706" stroke-width="3"/>
+              <circle cx="106" cy="48" r="9" fill="#fcd34d" stroke="#d97706" stroke-width="2.5"/>
+              <path d="M38 78 L12 60 L18 52 L48 68 Z" fill="#fbbf24" stroke="#b45309" stroke-width="3"/>
+              <ellipse cx="13" cy="56" rx="9" ry="6" fill="#38bdf8" stroke="#0369a1" stroke-width="2"/>
+              <rect x="42" y="65" width="68" height="52" rx="14" fill="#f59e0b" stroke="#b45309" stroke-width="3.5"/>
+              <path d="M68 95 C68 84 84 84 84 95 C84 100 76 102 68 95 Z" fill="#86efac"/>
+              <path d="M108 72 C132 72 132 110 108 112" fill="none" stroke="#b45309" stroke-width="8" stroke-linecap="round"/>
+              <path d="M108 72 C132 72 132 110 108 112" fill="none" stroke="#fde68a" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- 中層：草皮與花朵 -->
+        <div id="grass-right" class="ac-grass-pattern w-full h-24 md:h-32 rounded-t-3xl border-t-4 border-emerald-400 relative flex items-end justify-center pb-2 transition-colors duration-700">
+          <div class="absolute -top-3 left-6 text-emerald-600 text-lg md:text-xl font-black">▲ ▲ ▲</div>
+
+          <div id="flowers-right" class="relative z-10 flex items-end gap-2 md:gap-5 transition-transform duration-500">
+            <div class="flower-item flex flex-col items-center">
+              <div class="flower-bloom text-4xl md:text-5xl transition-transform duration-500 scale-90 -mb-1">🪻</div>
+              <div class="w-2.5 h-6 bg-emerald-600 rounded-full"></div>
+            </div>
+            <div class="flower-item flex flex-col items-center">
+              <div class="flower-bloom text-3xl md:text-4xl transition-transform duration-500 scale-90 -mb-1">🌺</div>
+              <div class="w-2 h-7 bg-emerald-600 rounded-full"></div>
+            </div>
+            <div class="flower-item flex flex-col items-center">
+              <div class="flower-bloom text-4xl md:text-5xl transition-transform duration-500 scale-90 -mb-1">🌷</div>
+              <div class="w-2.5 h-6 bg-emerald-600 rounded-full"></div>
+            </div>
+          </div>
+
+          <div id="dew-right" class="absolute inset-0 pointer-events-none hidden">
+            <span class="sparkle absolute top-3 right-6 text-white text-base md:text-2xl font-black">✧</span>
+            <span class="sparkle absolute top-6 left-6 text-cyan-200 text-lg md:text-2xl font-black" style="animation-delay: 0.8s;">✦</span>
+            <span class="sparkle absolute top-2 left-1/2 text-white text-xs md:text-base font-black" style="animation-delay: 0.3s;">✧</span>
+          </div>
+        </div>
+
+        <!-- 底層：泥土橫切面與蚯蚓 (純淨無字) -->
+        <div id="soil-right" class="soil-dry w-full h-28 md:h-36 rounded-b-2xl p-2 relative flex flex-col justify-between overflow-hidden border-t-2 border-stone-800/20">
+          <div class="absolute w-4 h-2 bg-stone-700/40 rounded-full top-8 left-12"></div>
+          
+          <div id="worm-right-1" class="worm-wiggle absolute bottom-4 left-6 flex items-center" style="animation-delay: -2.1s;">
+            <svg class="w-14 h-8 md:w-20 md:h-10 drop-shadow" viewBox="0 0 100 50">
+              <path d="M10 25 Q 30 10, 50 30 T 90 20" fill="none" stroke="#f472b6" stroke-width="12" stroke-linecap="round"/>
+              <circle cx="86" cy="20" r="2" fill="#831843"/>
+              <circle cx="80" cy="24" r="2.5" fill="#fbcfe8"/>
+            </svg>
+            <span id="heart-right" class="hidden absolute -top-4 right-0 text-base">✨</span>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- 底部溫馨提示條 -->
+  <footer class="relative z-10 w-full py-2 text-center text-emerald-900/70 text-xs md:text-sm font-bold bg-white/40 backdrop-blur-sm">
+    🌿 適合眼動儀 (Eye-tracker)、眼動滑鼠或觸控螢幕使用 • 凝視即可啟動
+  </footer>
+
+  <!-- ==================== 老師控制面板彈窗 (Teacher Settings Modal) ==================== -->
+  <div id="settingsModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border-4 border-emerald-400 transform transition-all">
+      <div class="flex items-center justify-between pb-3 border-b-2 border-slate-100">
+        <div class="flex items-center gap-2">
+          <span class="text-2xl">⚙️</span>
+          <h2 class="text-xl font-black text-slate-800">老師控制面板 (眼動設定)</h2>
+        </div>
+        <button id="btnCloseSettings" class="text-slate-400 hover:text-slate-700 text-2xl font-bold p-1 leading-none">&times;</button>
+      </div>
+
+      <div class="space-y-5 my-5">
+        <!-- 凝視秒數調整 -->
+        <div class="bg-amber-50 p-4 rounded-2xl border-2 border-amber-200">
+          <div class="flex justify-between items-center mb-1">
+            <label for="dwellSlider" class="font-extrabold text-amber-900 text-sm md:text-base flex items-center gap-1.5">
+              <span>⏱️</span> 凝視觸發秒數 (Dwell Time)
+            </label>
+            <span id="dwellValText" class="font-black text-lg text-emerald-600 bg-white px-3 py-0.5 rounded-full border border-emerald-300">1.5 秒</span>
+          </div>
+          <p class="text-xs text-amber-800/80 mb-3">學生視線停留在澆水區多久後開始倒水澆花：</p>
+          <input type="range" id="dwellSlider" min="0.5" max="4.0" step="0.25" value="1.5" class="w-full h-3 bg-amber-200 rounded-lg appearance-none cursor-pointer accent-emerald-500">
+          <div class="flex justify-between text-[11px] text-amber-900/60 font-bold mt-1">
+            <span>0.5秒 (反應極快)</span>
+            <span>1.5秒 (推薦)</span>
+            <span>4.0秒 (防誤觸)</span>
+          </div>
+        </div>
+
+        <!-- 音效設定 -->
+        <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🔊</span>
+            <div>
+              <div class="font-bold text-slate-800 text-sm">遊戲合成音效</div>
+              <div class="text-xs text-slate-500">倒水聲、花開叮咚聲與成功歡呼</div>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="soundToggle" class="sr-only peer" checked>
+            <div class="w-12 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+          </label>
+        </div>
+
+        <!-- 凝視進度環可視度 -->
+        <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-2xl border border-slate-200">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🎯</span>
+            <div>
+              <div class="font-bold text-slate-800 text-sm">顯示注視進度環</div>
+              <div class="text-xs text-slate-500">輔助特教學童確認視線停留位置</div>
+            </div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="ringToggle" class="sr-only peer" checked>
+            <div class="w-12 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex gap-3">
+        <button id="btnSaveSettings" class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-3 rounded-2xl shadow-lg transition text-center">
+          儲存並返回
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 全部完成慶祝彈窗 (Victory Celebration Modal) ==================== -->
+  <div id="winModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 hidden">
+    <div class="bg-gradient-to-b from-amber-50 to-emerald-50 rounded-3xl max-w-lg w-full p-8 text-center shadow-2xl border-4 border-yellow-300 transform scale-95 transition-all">
+      <div class="text-6xl md:text-7xl mb-3 animate-bounce">🎉🌸🌈</div>
+      <h2 class="text-2xl md:text-3xl font-black text-emerald-800 mb-2">好棒！花園澆完囉！</h2>
+      <p class="text-slate-600 text-sm md:text-base font-bold mb-6">
+        土壤吸飽了水分，每一朵小花都開得好燦爛，<br>小蚯蚓也開心地鑽出來跳舞囉！
+      </p>
+
+      <div class="flex flex-col sm:flex-row gap-3 justify-center">
+        <button id="btnPlayAgain" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-extrabold text-lg px-8 py-3.5 rounded-2xl shadow-xl shadow-emerald-500/30 transform active:scale-95 transition">
+          再玩一次 🌻
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =====================================================================
+       1. 音效模組 (真實園藝蓮蓬頭噴灑流水聲合成)
+       ===================================================================== */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.enabled = true;
+        this.sprayNode = null;
+        this.sprayGain = null;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      // 真實澆花器灑水聲：雙層粉紅/白雜訊帶通濾波 + 細密水滴擾動
+      startWaterSprinkle(duration = 1.4) {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const bufferSize = Math.floor(this.ctx.sampleRate * duration);
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+
+        // 生成帶有水流起伏的雜訊
+        let b0 = 0, b1 = 0, b2 = 0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          // 粉紅雜訊濾波算法 (柔化聲音，更像真實水流)
+          b0 = 0.99886 * b0 + white * 0.0555179;
+          b1 = 0.99332 * b1 + white * 0.0750759;
+          b2 = 0.96900 * b2 + white * 0.1538520;
+          const pink = b0 + b1 + b2 + white * 0.5362;
+          
+          // 微細水滴隨機噴灑擾動
+          const dropletMod = 0.85 + 0.15 * Math.sin(i * 0.08) * Math.random();
+          data[i] = pink * 0.11 * dropletMod;
+        }
+
+        const source = this.ctx.createBufferSource();
+        source.buffer = buffer;
+
+        // 園藝噴霧/流水高通與帶通濾波器
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(1400, this.ctx.currentTime);
+        filter.frequency.linearRampToValueAtTime(1000, this.ctx.currentTime + duration);
+        filter.Q.value = 1.8;
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.01, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.38, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.35, this.ctx.currentTime + duration - 0.2);
+        gain.gain.linearRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        source.start();
+
+        // 伴隨細微清脆水花氣泡音
+        this.playBubblePops(duration);
+      }
+
+      // 水滴滴落在土壤上的清脆微音
+      playBubblePops(duration) {
+        if (!this.ctx) return;
+        const count = 5;
+        for (let i = 0; i < count; i++) {
+          const delay = 0.15 + (i * (duration / count)) + Math.random() * 0.1;
+          const osc = this.ctx.createOscillator();
+          const popGain = this.ctx.createGain();
+
+          osc.type = 'sine';
+          const startFreq = 600 + Math.random() * 400;
+          osc.frequency.setValueAtTime(startFreq, this.ctx.currentTime + delay);
+          osc.frequency.exponentialRampToValueAtTime(200, this.ctx.currentTime + delay + 0.08);
+
+          popGain.gain.setValueAtTime(0.06, this.ctx.currentTime + delay);
+          popGain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + delay + 0.08);
+
+          osc.connect(popGain);
+          popGain.connect(this.ctx.destination);
+
+          osc.start(this.ctx.currentTime + delay);
+          osc.stop(this.ctx.currentTime + delay + 0.08);
+        }
+      }
+
+      // 花朵綻放與完成叮咚聲 (Pentatonic Tone)
+      playDing() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+        notes.forEach((freq, idx) => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+
+          const startTime = this.ctx.currentTime + idx * 0.08;
+          gain.gain.setValueAtTime(0.2, startTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.5);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(startTime);
+          osc.stop(startTime + 0.5);
+        });
+      }
+
+      // 勝利慶祝和弦
+      playFanfare() {
+        if (!this.enabled) return;
+        this.init();
+        if (!this.ctx) return;
+
+        const chords = [
+          { f: 523.25, t: 0 },    // C5
+          { f: 659.25, t: 0.1 },  // E5
+          { f: 783.99, t: 0.2 },  // G5
+          { f: 1046.5, t: 0.35 }, // C6
+          { f: 1318.5, t: 0.5 }   // E6
+        ];
+
+        chords.forEach(note => {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.value = note.f;
+
+          const start = this.ctx.currentTime + note.t;
+          gain.gain.setValueAtTime(0.25, start);
+          gain.gain.exponentialRampToValueAtTime(0.001, start + 0.8);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(start);
+          osc.stop(start + 0.8);
+        });
+      }
+    }
+
+    const sound = new SoundEngine();
+
+    /* =====================================================================
+       2. 遊戲主狀態與眼動凝視 (Gaze Tracking Engine)
+       ===================================================================== */
+    const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * 50; // 約 314.16
+
+    const state = {
+      dwellTimeMs: 1500,        // 預設 1.5 秒凝視
+      showRings: true,          // 是否顯示注視進度環
+      activeZone: null,         // 當前凝視中的區域 ('left' | 'mid' | 'right')
+      dwellStartTime: null,     // 開始注視時間戳
+      animationFrameId: null,   // requestAnimationFrame ID
+      watered: {                // 各區澆水狀態
+        left: false,
+        mid: false,
+        right: false
+      },
+      isPouring: false          // 是否正在執行澆水動畫鎖定
+    };
+
+    // DOM 元素快取
+    const zones = {
+      left: document.getElementById('zone-left'),
+      mid: document.getElementById('zone-mid'),
+      right: document.getElementById('zone-right')
+    };
+
+    const rings = {
+      left: document.getElementById('ring-left'),
+      mid: document.getElementById('ring-mid'),
+      right: document.getElementById('ring-right')
+    };
+
+    const instructionEl = document.getElementById('instructionText');
+
+    /* =====================================================================
+       3. 凝視邏輯處理 (模擬眼動注視停留)
+       ===================================================================== */
+    function onGazeEnter(zoneKey) {
+      // 若該區已澆水、或正在澆水動畫中，則不重複觸發
+      if (state.watered[zoneKey] || state.isPouring) return;
+
+      sound.init(); // 觸摸或滑鼠啟用音訊環境
+      state.activeZone = zoneKey;
+      state.dwellStartTime = performance.now();
+
+      // 視覺提示
+      zones[zoneKey].classList.add('ring-4', 'ring-teal-300', 'rounded-3xl');
+
+      if (state.animationFrameId) cancelAnimationFrame(state.animationFrameId);
+      state.animationFrameId = requestAnimationFrame(updateGazeDwell);
+    }
+
+    function onGazeLeave(zoneKey) {
+      if (state.activeZone === zoneKey) {
+        state.activeZone = null;
+        state.dwellStartTime = null;
+        if (state.animationFrameId) {
+          cancelAnimationFrame(state.animationFrameId);
+        }
+        resetRing(zoneKey);
+        zones[zoneKey].classList.remove('ring-4', 'ring-teal-300', 'rounded-3xl');
+      }
+    }
+
+    function updateGazeDwell(now) {
+      if (!state.activeZone || state.isPouring) return;
+
+      const elapsed = now - state.dwellStartTime;
+      const progress = Math.min(elapsed / state.dwellTimeMs, 1.0);
+
+      // 更新對應 SVG 環的進度
+      const ringEl = rings[state.activeZone];
+      if (ringEl && state.showRings) {
+        const offset = CIRCLE_CIRCUMFERENCE * (1 - progress);
+        ringEl.style.strokeDashoffset = offset;
+      }
+
+      if (progress >= 1.0) {
+        // 凝視秒數達標，觸發澆水！
+        triggerWatering(state.activeZone);
+      } else {
+        state.animationFrameId = requestAnimationFrame(updateGazeDwell);
+      }
+    }
+
+    function resetRing(zoneKey) {
+      const ringEl = rings[zoneKey];
+      if (ringEl) {
+        ringEl.style.strokeDashoffset = CIRCLE_CIRCUMFERENCE;
+      }
+    }
+
+    /* =====================================================================
+       4. 澆花動作與動物森友會風格動態效果
+       ===================================================================== */
+    function triggerWatering(zoneKey) {
+      state.isPouring = true;
+      state.watered[zoneKey] = true;
+      resetRing(zoneKey);
+
+      const zoneEl = zones[zoneKey];
+      zoneEl.classList.remove('ring-4', 'ring-teal-300', 'rounded-3xl');
+
+      // 取得各層元素
+      const canWrapper = document.getElementById(`can-wrapper-${zoneKey}`);
+      const waterStream = document.getElementById(`water-stream-${zoneKey}`);
+      const grass = document.getElementById(`grass-${zoneKey}`);
+      const soil = document.getElementById(`soil-${zoneKey}`);
+      const dew = document.getElementById(`dew-${zoneKey}`);
+      const heart = document.getElementById(`heart-${zoneKey}`);
+      const badge = document.getElementById(`badge-${zoneKey}`);
+      const blooms = zoneEl.querySelectorAll('.flower-bloom');
+
+      // 1. 手與水壺傾斜倒水，播放真實灑水流水聲
+      canWrapper.classList.add('can-watering');
+      waterStream.classList.remove('hidden');
+      sound.startWaterSprinkle(1.4);
+
+      // 2. 澆灌中與完成 (持續 1.4 秒)
+      setTimeout(() => {
+        // 土壤變濕潤深色
+        soil.classList.remove('soil-dry');
+        soil.classList.add('soil-wet');
+
+        // 草皮顏色更水潤鮮明
+        grass.classList.remove('ac-grass-pattern');
+        grass.classList.add('ac-grass-watered');
+
+        // 水珠與閃爍晶瑩特效 (動森風格)
+        dew.classList.remove('hidden');
+
+        // 花朵盛開綻放 (放大 + 擺動)
+        blooms.forEach(b => {
+          b.classList.remove('scale-90');
+          b.classList.add('scale-125', 'transition-transform');
+        });
+
+        // 蚯蚓冒出愛心/音符開心地扭動
+        if (heart) {
+          heart.classList.remove('hidden');
+          heart.classList.add('float-heart');
+        }
+
+        // 播放叮咚成功聲
+        sound.playDing();
+
+        // 更新頂部進度徽章
+        if (badge) {
+          badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500 text-white border border-emerald-600 shadow-sm";
+          badge.textContent = `${badge.textContent.split(' ')[0]} 完成 ✓`;
+        }
+
+        // 水壺復原
+        canWrapper.classList.remove('can-watering');
+        waterStream.classList.add('hidden');
+
+        state.isPouring = false;
+        checkWinCondition();
+      }, 1400);
+    }
+
+    /* =====================================================================
+       5. 獲勝判斷 (左中右三區皆完成)
+       ===================================================================== */
+    function checkWinCondition() {
+      const allDone = state.watered.left && state.watered.mid && state.watered.right;
+      if (allDone) {
+        instructionEl.textContent = "太厲害了！你把所有的小花都澆飽水囉！🌸";
+        sound.playFanfare();
+
+        // 噴灑全螢幕彩色碎紙花
+        if (window.confetti) {
+          window.confetti({
+            particleCount: 120,
+            spread: 90,
+            origin: { y: 0.6 }
+          });
+          setTimeout(() => {
+            window.confetti({
+              particleCount: 80,
+              angle: 60,
+              spread: 60,
+              origin: { x: 0 }
+            });
+            window.confetti({
+              particleCount: 80,
+              angle: 120,
+              spread: 60,
+              origin: { x: 1 }
+            });
+          }, 400);
+        }
+
+        setTimeout(() => {
+          document.getElementById('winModal').classList.remove('hidden');
+        }, 1200);
+      } else {
+        const remaining = 3 - Object.values(state.watered).filter(Boolean).length;
+        instructionEl.textContent = `太棒了！還有 ${remaining} 個區域，繼續看看哪裡需要水喔！`;
+      }
+    }
+
+    /* =====================================================================
+       6. 重新開始與狀態重置
+       ===================================================================== */
+    function resetGame() {
+      ['left', 'mid', 'right'].forEach(key => {
+        state.watered[key] = false;
+        resetRing(key);
+
+        const zoneEl = zones[key];
+        const canWrapper = document.getElementById(`can-wrapper-${key}`);
+        const waterStream = document.getElementById(`water-stream-${key}`);
+        const grass = document.getElementById(`grass-${key}`);
+        const soil = document.getElementById(`soil-${key}`);
+        const dew = document.getElementById(`dew-${key}`);
+        const heart = document.getElementById(`heart-${key}`);
+        const badge = document.getElementById(`badge-${key}`);
+        const blooms = zoneEl.querySelectorAll('.flower-bloom');
+
+        canWrapper.classList.remove('can-watering');
+        waterStream.classList.add('hidden');
+
+        soil.classList.remove('soil-wet');
+        soil.classList.add('soil-dry');
+
+        grass.classList.remove('ac-grass-watered');
+        grass.classList.add('ac-grass-pattern');
+
+        dew.classList.add('hidden');
+        if (heart) {
+          heart.classList.add('hidden');
+          heart.classList.remove('float-heart');
+        }
+
+        blooms.forEach(b => {
+          b.classList.remove('scale-125');
+          b.classList.add('scale-90');
+        });
+
+        if (badge) {
+          badge.className = "px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-700 border border-amber-300";
+          badge.textContent = `${badge.textContent.split(' ')[0]} 待澆`;
+        }
+      });
+
+      state.activeZone = null;
+      state.isPouring = false;
+      instructionEl.textContent = "看著你想澆水的區域，壺壺就會自動倒水唷！";
+      document.getElementById('winModal').classList.add('hidden');
+    }
+
+    /* =====================================================================
+       7. 事件監聽 (支援滑鼠 Hover、觸控 Touch 與點擊 Direct Click)
+       ===================================================================== */
+    Object.keys(zones).forEach(key => {
+      const el = zones[key];
+
+      // 滑鼠懸停模擬眼動
+      el.addEventListener('mouseenter', () => onGazeEnter(key));
+      el.addEventListener('mouseleave', () => onGazeLeave(key));
+
+      // 觸控或點擊支援
+      el.addEventListener('pointerdown', (e) => {
+        onGazeEnter(key);
+      });
+      el.addEventListener('pointerup', () => onGazeLeave(key));
+    });
+
+    // 重新開始按鈕
+    document.getElementById('btnReset').addEventListener('click', resetGame);
+    document.getElementById('btnPlayAgain').addEventListener('click', resetGame);
+
+    /* =====================================================================
+       8. 老師控制面板邏輯
+       ===================================================================== */
+    const settingsModal = document.getElementById('settingsModal');
+    const btnSettings = document.getElementById('btnSettings');
+    const btnCloseSettings = document.getElementById('btnCloseSettings');
+    const btnSaveSettings = document.getElementById('btnSaveSettings');
+    const dwellSlider = document.getElementById('dwellSlider');
+    const dwellValText = document.getElementById('dwellValText');
+    const soundToggle = document.getElementById('soundToggle');
+    const ringToggle = document.getElementById('ringToggle');
+
+    btnSettings.addEventListener('click', () => {
+      sound.init();
+      settingsModal.classList.remove('hidden');
+    });
+
+    const closePanel = () => settingsModal.classList.add('hidden');
+    btnCloseSettings.addEventListener('click', closePanel);
+    btnSaveSettings.addEventListener('click', closePanel);
+
+    // 調整凝視時間
+    dwellSlider.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      state.dwellTimeMs = val * 1000;
+      dwellValText.textContent = `${val.toFixed(2)} 秒`;
+    });
+
+    // 音效開關
+    soundToggle.addEventListener('change', (e) => {
+      sound.enabled = e.target.checked;
+    });
+
+    // 注視環顯示切換
+    ringToggle.addEventListener('change', (e) => {
+      state.showRings = e.target.checked;
+      document.querySelectorAll('.gaze-container').forEach(c => {
+        c.style.display = state.showRings ? 'flex' : 'none';
+      });
+    });
+
+    // 啟動初始聲音上下文
+    window.addEventListener('click', () => sound.init(), { once: true });
+    window.addEventListener('touchstart', () => sound.init(), { once: true });
+  </script>
+</body>
+</html>
