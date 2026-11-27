@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>水果園採果樂｜蘋果樹（眼動凝視採蘋果）</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#08202f;user-select:none;-webkit-user-select:none;
+ font-family:"Noto Sans TC","Microsoft JhengHei","PingFang TC","Heiti TC","LiHei Pro",sans-serif}
+#stage{position:fixed;inset:0;overflow:hidden}
+#game{position:absolute;left:0;top:0;width:1280px;height:720px;transform-origin:0 0;overflow:hidden;background:#eaf9ff}
+#bg{position:absolute;inset:0;z-index:1;
+ background:linear-gradient(180deg,#bfe9ff 0,#eaf9ff 300px,#d5f0bb 400px,#a9dd85 442px,#8ecb64 100%)}
+#trees{position:absolute;inset:0;z-index:3}
+.tree{position:absolute;top:0}
+.tree svg{display:block;width:100%;height:100%}
+#fruits{position:absolute;inset:0;z-index:6;pointer-events:none}
+
+/* 頂列 */
+#bar{position:absolute;left:0;top:0;width:1280px;height:64px;display:flex;align-items:center;gap:14px;
+ padding:0 20px;background:#fff;box-shadow:0 2px 12px rgba(0,0,0,.16);z-index:40}
+.brand{font-size:25px;font-weight:900;color:#134f6d;white-space:nowrap}
+.brand .sub{font-size:13px;font-weight:700;color:#8aa9b8;margin-left:8px}
+.counters{display:flex;gap:12px;margin-left:auto;align-items:center}
+.chip{display:flex;align-items:center;gap:8px;font-size:19px;font-weight:800;color:#20404f;
+ background:#f1f8fc;border:2px solid #d5e7f2;border-radius:999px;padding:4px 18px;white-space:nowrap}
+.chip b{font-size:26px;color:#0f6ea8;min-width:22px;text-align:center}
+.chip i{font-style:normal;color:#7b96a6;font-size:18px;font-weight:700}
+.btn{font:inherit;font-weight:900;font-size:17px;padding:9px 16px;border-radius:12px;border:2px solid #bcd7e6;
+ background:#f2f9ff;color:#0f6ea8;cursor:pointer}
+.btn:hover{background:#e1f1fd;border-color:#8fc2dd}
+.btn.primary{background:#0f6ea8;color:#fff;border-color:#0f6ea8}
+.btn.primary:hover{background:#0c5c8c}
+.btn.small{font-size:14px;padding:5px 12px}
+
+/* 提示 */
+#hint{position:absolute;left:30px;top:664px;z-index:20;font-size:17px;font-weight:800;color:#2a6a8c;
+ background:rgba(255,255,255,.86);border-radius:999px;padding:6px 20px;pointer-events:none}
+
+/* 水果 */
+.fruit{position:absolute;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;
+ touch-action:none;transition:transform .16s ease}
+.fruit svg.body{position:relative;z-index:1;width:100%;height:100%;display:block;
+ filter:drop-shadow(0 7px 9px rgba(0,0,0,.32))}
+.fruit .ring{position:absolute;left:50%;top:50%;width:var(--ring,136px);height:var(--ring,136px);
+ transform:translate(-50%,-50%);z-index:2;pointer-events:none;opacity:0;transition:opacity .14s;
+ filter:drop-shadow(0 0 4px rgba(0,0,0,.35))}
+.fruit.dwelling{transform:translate(-50%,-50%) scale(1.12)}
+.fruit.dwelling .ring{opacity:1}
+.fruit .trk{fill:none;stroke:rgba(255,255,255,.9);stroke-width:11}
+.fruit .prg{fill:none;stroke:#ff8c00;stroke-width:11;stroke-linecap:round;
+ transform:rotate(-90deg);transform-origin:70px 70px;stroke-dasharray:377;stroke-dashoffset:377}
+.fruit.dwelling .prg{transition:stroke-dashoffset var(--dw,1s) linear;stroke-dashoffset:0}
+.fruit.picked{pointer-events:none;cursor:default}
+
+/* 水果籃 */
+.basket{position:absolute;left:540px;top:552px;width:210px;height:152px;z-index:8;opacity:0;
+ transform:translateY(18px) scale(.7);pointer-events:none;
+ transition:opacity .22s ease,transform .36s cubic-bezier(.34,1.7,.5,1)}
+.basket.shown{opacity:1;transform:translateY(0) scale(1)}
+.basket svg{width:100%;height:100%;display:block;filter:drop-shadow(0 9px 13px rgba(0,0,0,.34))}
+.badge{position:absolute;left:50%;top:56%;transform:translate(-50%,-50%);font-size:48px;font-weight:900;
+ color:#fff;text-shadow:0 3px 0 #7d5024,0 0 12px rgba(0,0,0,.55)}
+.badge.bump{animation:bump .42s ease}
+@keyframes bump{0%{transform:translate(-50%,-50%) scale(1)}45%{transform:translate(-50%,-50%) scale(1.5)}
+ 100%{transform:translate(-50%,-50%) scale(1)}}
+
+#toast{position:absolute;left:50%;top:86px;transform:translate(-50%,-16px);z-index:60;
+ background:rgba(255,255,255,.97);border:3px solid #ffb703;border-radius:999px;padding:10px 32px;
+ font-size:30px;font-weight:900;color:#0f6ea8;opacity:0;transition:.22s;pointer-events:none;white-space:nowrap;
+ box-shadow:0 12px 28px rgba(0,0,0,.24)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* 設定面板 */
+#panel{position:fixed;right:16px;top:16px;width:400px;max-height:calc(100vh - 32px);overflow:auto;
+ background:#fff;border-radius:18px;box-shadow:0 24px 60px rgba(0,0,0,.45);padding:18px 22px 20px;
+ z-index:200;display:none;color:#1f3a48}
+#panel.open{display:block}
+.ph{display:flex;align-items:center;justify-content:space-between;font-size:20px;font-weight:900;
+ color:#134f6d;border-bottom:2px solid #e6f0f6;padding-bottom:10px}
+.row{margin:16px 0}
+.lab{display:flex;justify-content:space-between;align-items:baseline;font-size:16px;font-weight:800;margin-bottom:7px}
+.lab b{color:#0f6ea8;font-size:22px}
+input[type=range]{width:100%;height:24px;accent-color:#0f6ea8;cursor:pointer}
+.ck{display:flex;align-items:center;gap:10px;font-size:16px;font-weight:800;cursor:pointer;margin:12px 0}
+.ck input{width:20px;height:20px;accent-color:#0f6ea8;cursor:pointer}
+.btns{display:flex;gap:10px;margin-top:16px}
+.btns .btn{flex:1}
+.tip{margin:14px 0 0;font-size:13.5px;line-height:1.65;color:#6d8b9c;background:#f5fafd;border-radius:10px;padding:11px 13px}
+.tip b{color:#0f6ea8}
+</style>
+</head>
+<body>
+<div id="stage"><div id="game">
+  <div id="bg"></div>
+  <div id="trees"></div>
+  <div id="fruits"></div>
+
+  <div class="basket" id="basket">
+    <svg viewBox="0 0 210 152">
+      <path d="M20 34 L190 34 L168 142 Q105 154 42 142 Z" fill="#c98b45"/>
+      <g stroke="#a76c2c" stroke-width="6" opacity=".85">
+        <path d="M26 62 L184 62"/><path d="M30 90 L180 90"/><path d="M36 118 L174 118"/>
+      </g>
+      <g stroke="#e2b57a" stroke-width="8" opacity=".9">
+        <path d="M66 36 L60 148"/><path d="M105 36 L105 152"/><path d="M144 36 L150 148"/>
+      </g>
+      <rect x="6" y="14" width="198" height="34" rx="17" fill="#8a5a2b"/>
+      <rect x="6" y="14" width="198" height="15" rx="7" fill="#b47a3c"/>
+    </svg>
+    <div class="badge" id="badge">0</div>
+  </div>
+
+  <div id="hint">🍎 用眼睛看著蘋果，圈圈跑滿就會採收</div>
+  <div id="toast"></div>
+
+  <div id="bar">
+    <div class="brand">🍎 水果園採果樂<span class="sub">眼動凝視採蘋果</span></div>
+    <div class="counters">
+      <span class="chip">🍎 蘋果 <b id="cNum">0</b><i>/</i><i id="tNum">3</i></span>
+      <span class="chip">⏱ <b id="dwellChip">1.0</b><i>秒</i></span>
+    </div>
+    <button class="btn" id="btnSet">⚙ 老師設定</button>
+  </div>
+</div></div>
+
+<div id="panel">
+  <div class="ph"><span>⚙ 老師設定</span><button class="btn small" id="btnClose">關閉設定</button></div>
+  <div class="row">
+    <div class="lab"><span>🍎 蘋果數量</span><b id="vNum">3</b></div>
+    <input type="range" id="rNum" min="1" max="9" step="1" value="3">
+  </div>
+  <div class="row">
+    <div class="lab"><span>⏱ 凝視秒數</span><b id="vDwell">1.0 秒</b></div>
+    <input type="range" id="rDwell" min="0.1" max="2" step="0.1" value="1">
+  </div>
+  <label class="ck"><input type="checkbox" id="ckTwo" checked>使用兩棵蘋果樹（關閉＝改為一棵大樹）</label>
+  <label class="ck"><input type="checkbox" id="ckSound" checked>採摘音效</label>
+  <div class="btns">
+    <button class="btn primary" id="btnRestart">重新開始</button>
+    <button class="btn" id="btnDefault">回到預設</button>
+  </div>
+  <div class="btns"><button class="btn" id="btnFull">全螢幕</button></div>
+  <div class="tip">
+    <b>使用方式</b><br>
+    1. 設定數量與凝視秒數後，按「關閉設定」，再讓學生開始。<br>
+    2. 學生把視線停在蘋果上（眼動棒＝滑鼠游標），蘋果外圈出現<b>橘色進度圈</b>；停滿設定秒數即自動採收，完全不用點擊。<br>
+    3. 視線移開會重新計算，不會誤採。<br>
+    4. 快捷鍵：<b>F</b> 全螢幕、<b>R</b> 重新開始、<b>S</b> 設定、<b>Esc</b> 關閉設定。<br>
+    5. 「老師設定」需<b>雙擊</b>才會開啟，避免學生凝視時誤觸。<br>
+    6. 網址參數：<b>?n=9&dwell=1.5&two=0</b>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var GAME_W=1280,GAME_H=720;
+var DEF={count:3,dwell:1.0,sound:true,two:true};
+var KEY="gazeAppleGame.v2";
+var state={count:3,dwell:1.0,sound:true,two:true};
+var picked=0;
+
+/* ---------- 版面縮放 ---------- */
+var game=document.getElementById("game");
+function fit(){
+  var s=Math.min(window.innerWidth/GAME_W,window.innerHeight/GAME_H);
+  game.style.transform="translate("+((window.innerWidth-GAME_W*s)/2)+"px,"+
+    ((window.innerHeight-GAME_H*s)/2)+"px) scale("+s+")";
+}
+window.addEventListener("resize",fit);
+
+/* ---------- 音效 ---------- */
+var ac=null;
+function AC(){
+  if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)();}catch(e){ac=null;}}
+  if(ac&&ac.state==="suspended"){try{ac.resume();}catch(e){}}
+  return ac;
+}
+function tone(f1,f2,dur,type,vol,delay){
+  if(!state.sound) return;
+  var c=AC(); if(!c) return;
+  var t0=c.currentTime+(delay||0);
+  var o=c.createOscillator(),g=c.createGain();
+  o.type=type||"triangle";
+  o.frequency.setValueAtTime(f1,t0);
+  if(f2) o.frequency.exponentialRampToValueAtTime(Math.max(40,f2),t0+dur);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(vol||0.25,t0+0.014);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g);g.connect(c.destination);
+  o.start(t0);o.stop(t0+dur+0.05);
+}
+function sfxTick(){tone(1180,1180,0.05,"sine",0.07,0);}
+function sfxPluck(){tone(520,880,0.13,"triangle",0.30,0);tone(1000,720,0.10,"sine",0.13,0.02);}
+function sfxLand(){tone(430,250,0.13,"sine",0.20,0);}
+function sfxOpen(){tone(660,990,0.10,"sine",0.20,0);}
+function sfxWin(){[523,659,784,1046].forEach(function(f,i){tone(f,f*1.01,0.36,"sine",0.22,i*0.13);});}
+
+/* ---------- 大樹（樹幹與樹冠一體成形） ---------- */
+/* 樹冠中心 (cx,cy)、半徑 (rx,ry)；樹幹底座位於 baseY，樹冠覆蓋樹幹頂端，兩者相連無縫隙 */
+function treeSVG(tw,cy,rx,ry,baseY){
+  var rel=[[0,0,1,1],[-0.6,0.29,0.51,0.63],[0.6,0.29,0.51,0.63],
+           [-0.4,-0.43,0.54,0.56],[0.4,-0.43,0.54,0.56],[0,0.37,0.98,0.61]];
+  var mx=tw/2;
+  var shapes=rel.map(function(e){
+    return {cx:mx+e[0]*rx, cy:cy+e[1]*ry, rx:e[2]*rx, ry:e[3]*ry};
+  });
+  var w=Math.max(40,rx*0.2);
+  var s='<svg viewBox="0 0 '+tw+' '+baseY+'" preserveAspectRatio="none">';
+  s+='<defs><linearGradient id="cg" gradientUnits="userSpaceOnUse" x1="0" y1="'+(cy-ry)+'" x2="0" y2="'+(cy+ry+10)+'">'+
+     '<stop offset="0%" stop-color="#8ad96c"/><stop offset="52%" stop-color="#5cb855"/>'+
+     '<stop offset="100%" stop-color="#3d9540"/></linearGradient></defs>';
+  /* 樹幹（先畫，樹冠蓋住頂端 → 連成一棵樹） */
+  s+='<path d="M'+(mx-w/2-7)+' '+baseY+' C'+(mx-w*0.35)+' '+(baseY-72)+' '+(mx-w/2+2)+' '+(baseY-108)+
+     ' '+(mx-w/2+4)+' '+(baseY-136)+' L'+(mx+w/2-4)+' '+(baseY-136)+
+     ' C'+(mx+w/2-2)+' '+(baseY-108)+' '+(mx+w*0.35)+' '+(baseY-72)+' '+(mx+w/2+7)+' '+baseY+' Z" fill="#8d5a2b"/>';
+  s+='<path d="M'+(mx-9)+' '+(baseY-128)+' L'+(mx-12)+' '+baseY+' L'+(mx+3)+' '+baseY+
+     ' L'+(mx+3)+' '+(baseY-128)+' Z" fill="#b58049" opacity=".9"/>';
+  /* 樹冠：先描邊、再實心填滿（蓋掉內部接線，形成一體輪廓） */
+  var i,e,st='',fi='';
+  for(i=0;i<shapes.length;i++){
+    e=shapes[i];
+    st+='<ellipse cx="'+e.cx.toFixed(1)+'" cy="'+e.cy.toFixed(1)+'" rx="'+e.rx.toFixed(1)+
+        '" ry="'+e.ry.toFixed(1)+'" fill="url(#cg)" stroke="#2f7d3a" stroke-width="12"/>';
+  }
+  for(i=0;i<shapes.length;i++){
+    e=shapes[i];
+    fi+='<ellipse cx="'+e.cx.toFixed(1)+'" cy="'+e.cy.toFixed(1)+'" rx="'+e.rx.toFixed(1)+
+        '" ry="'+e.ry.toFixed(1)+'" fill="url(#cg)"/>';
+  }
+  s+=st+fi+'</svg>';
+  return s;
+}
+
+var CY=212, RY=140, BASE=420;
+function addTree(cx,rx,tw){
+  var d=document.createElement("div");
+  d.className="tree";
+  d.style.left=(cx-tw/2)+"px";
+  d.style.top="0px";
+  d.style.width=tw+"px";
+  d.style.height=BASE+"px";
+  d.innerHTML=treeSVG(tw,CY,rx,RY,BASE);
+  document.getElementById("trees").appendChild(d);
+}
+
+/* ---------- 水果 ---------- */
+var layer=document.getElementById("fruits");
+function clearFruits(){while(layer.firstChild) layer.removeChild(layer.firstChild);}
+
+function appleSVG(){
+  return '<svg class="ring" viewBox="0 0 140 140">'+
+           '<circle class="trk" cx="70" cy="70" r="60"/>'+
+           '<circle class="prg" cx="70" cy="70" r="60"/></svg>'+
+         '<svg class="body" viewBox="0 0 100 100">'+
+           '<circle cx="34" cy="52" r="29" fill="#cf2b21"/>'+
+           '<circle cx="66" cy="52" r="29" fill="#cf2b21"/>'+
+           '<circle cx="50" cy="60" r="33" fill="#e23b2e"/>'+
+           '<ellipse cx="37" cy="47" rx="12" ry="8" fill="#ffffff" opacity=".32" transform="rotate(-28 37 47)"/>'+
+           '<path d="M50 28 C51 20 53 15 57 10" stroke="#7a4a1e" stroke-width="5" fill="none" stroke-linecap="round"/>'+
+           '<ellipse cx="68" cy="17" rx="13" ry="7" fill="#4caf50" transform="rotate(-22 68 17)"/>'+
+         '</svg>';
+}
+
+function addApple(x,y,size){
+  var d=document.createElement("div");
+  d.className="fruit";
+  d.style.left=x+"px"; d.style.top=y+"px";
+  d.style.width=size+"px"; d.style.height=size+"px";
+  d.style.setProperty("--ring",Math.round(size*1.36)+"px");
+  d.innerHTML=appleSVG();
+  d.addEventListener("pointerenter",function(){beginDwell(d);});
+  d.addEventListener("pointerleave",function(){endDwell(d);});
+  d.addEventListener("pointercancel",function(){endDwell(d);});
+  layer.appendChild(d);
+}
+
+/* ---------- 隨機散布（拒絕取樣 + 備援網格，保證不重疊、不超出範圍） ---------- */
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+
+function randInEllipse(cx,cy,rx,ry){
+  var a=Math.random()*Math.PI*2, r=Math.sqrt(Math.random());
+  return {x:cx+Math.cos(a)*r*rx, y:cy+Math.sin(a)*r*ry};
+}
+function farEnough(p,list,D){
+  for(var i=0;i<list.length;i++){
+    var dx=p.x-list[i].x, dy=p.y-list[i].y;
+    if(dx*dx+dy*dy<D*D) return false;
+  }
+  return true;
+}
+
+/* 樹冠隨機散布；D 由大而小自動放寬，最後以極座標網格保證一定放得下 n 個 */
+function placeOnTree(n,cx,rx,ry,cy,D){
+  var tx=0.80, ty=0.70;
+  for(var round=0; round<9; round++){
+    var cur=[],ok=true;
+    for(var i=0;i<n;i++){
+      var placed=false;
+      for(var k=0;k<420;k++){
+        var p=randInEllipse(cx,cy,rx*tx,ry*ty);
+        if(farEnough(p,cur,D)){cur.push(p);placed=true;break;}
+      }
+      if(!placed){ok=false;break;}
+    }
+    if(ok) return cur;
+    D=Math.max(74,D-9);
+  }
+  /* 備援：極座標網格 + 抖動 */
+  var cand=[];
+  for(var ri=1;ri<=5;ri++){
+    var rr=(ri/5.2)*tx, cnt=Math.max(4,Math.round(2*Math.PI*ri*1.05));
+    for(var ai=0;ai<cnt;ai++){
+      var ang=(ai/cnt)*Math.PI*2+ri*0.45;
+      cand.push({x:cx+Math.cos(ang)*rx*rr+(Math.random()-0.5)*14,
+                 y:cy+Math.sin(ang)*ry*(rr/tx*0.875)+(Math.random()-0.5)*14});
+    }
+  }
+  shuffle(cand);
+  var out=[],used=[];
+  var d0=Math.max(70,D);
+  for(var a=0;a<cand.length&&out.length<n;a++){
+    if(farEnough(cand[a],out,d0)){out.push(cand[a]);used.push(cand[a]);}
+  }
+  for(var b=0;b<cand.length&&out.length<n;b++){
+    if(used.indexOf(cand[b])<0){out.push(cand[b]);used.push(cand[b]);}
+  }
+  return out.slice(0,n);
+}
+
+/* ---------- 場景 ---------- */
+function buildScene(){
+  document.getElementById("trees").innerHTML="";
+  clearFruits();
+  picked=0;
+  document.getElementById("basket").classList.remove("shown");
+  document.getElementById("badge").textContent="0";
+  document.querySelector(".badge").classList.remove("bump");
+
+  var n=state.count, spots=[], size;
+
+  if(state.two){
+    size=100;
+    var a=Math.ceil(n/2), b=n-a;
+    addTree(300,260,620);
+    addTree(980,260,620);
+    spots=spots.concat(placeOnTree(a,300,260,RY,CY,128));
+    spots=spots.concat(placeOnTree(b,980,260,RY,CY,128));
+  }else{
+    size = n<=4?100 : n<=6?90 : 78;
+    addTree(640,400,920);
+    spots=placeOnTree(n,640,400,145,CY,Math.max(88,Math.round(size*1.25)));
+  }
+
+  for(var i=0;i<spots.length;i++) addApple(spots[i].x,spots[i].y,size);
+  updateHUD();
+}
+
+/* ---------- 凝視計時 ---------- */
+var dwellTimer=null, dwellEl=null;
+function beginDwell(el){
+  if(el.classList.contains("picked")) return;
+  AC();
+  if(dwellEl===el&&dwellTimer) return;
+  if(dwellTimer){clearTimeout(dwellTimer);dwellTimer=null;}
+  dwellEl=el;
+  el.style.setProperty("--dw",state.dwell+"s");
+  el.classList.remove("dwelling");
+  void el.offsetWidth;
+  el.classList.add("dwelling");
+  sfxTick();
+  dwellTimer=setTimeout(function(){
+    dwellTimer=null;
+    if(dwellEl===el) pick(el);
+  },Math.round(state.dwell*1000));
+}
+function endDwell(el){
+  if(dwellEl!==el) return;
+  if(dwellTimer){clearTimeout(dwellTimer);dwellTimer=null;}
+  el.classList.remove("dwelling");
+  dwellEl=null;
+}
+
+/* ---------- 採收：飛入籃子 ---------- */
+function pick(el){
+  dwellEl=null;
+  el.classList.remove("dwelling");
+  el.classList.add("picked");
+
+  var basket=document.getElementById("basket");
+  if(!basket.classList.contains("shown")){
+    basket.classList.add("shown");
+    setTimeout(sfxOpen,110);
+  }
+  sfxPluck();
+
+  var x0=parseFloat(el.style.left), y0=parseFloat(el.style.top);
+  var bx=645, by=628;
+  var cpx=x0+(bx-x0)*0.5, cpy=Math.min(y0,by)-170;
+  var dur=820, t0=performance.now();
+
+  function frame(now){
+    var t=Math.min(1,(now-t0)/dur);
+    var e=t<0.5?(2*t*t):(1-Math.pow(-2*t+2,2)/2);
+    var x=(1-e)*(1-e)*x0+2*(1-e)*e*cpx+e*e*bx;
+    var y=(1-e)*(1-e)*y0+2*(1-e)*e*cpy+e*e*by;
+    var s=1-0.6*e;
+    el.style.left=x+"px";
+    el.style.top=y+"px";
+    el.style.transform="translate(-50%,-50%) scale("+s+") rotate("+(e*12)+"deg)";
+    if(t<1) requestAnimationFrame(frame); else land(el);
+  }
+  requestAnimationFrame(frame);
+}
+function land(el){
+  sfxLand();
+  el.style.transition="opacity .3s ease";
+  el.style.opacity="0";
+  setTimeout(function(){if(el.parentNode) el.parentNode.removeChild(el);},340);
+
+  picked++;
+  var bd=document.getElementById("badge");
+  bd.textContent=picked;
+  bd.classList.remove("bump"); void bd.offsetWidth; bd.classList.add("bump");
+  updateHUD();
+
+  if(picked>=state.count){
+    sfxWin();
+    toast("🎉 太棒了！採了 "+state.count+" 顆蘋果！",3000);
+  }else{
+    toast("👏 採到 1 顆蘋果，籃子裡有 "+picked+" 顆",1500);
+  }
+}
+
+/* ---------- HUD ---------- */
+function updateHUD(){
+  document.getElementById("cNum").textContent=picked;
+  document.getElementById("tNum").textContent=state.count;
+  document.getElementById("dwellChip").textContent=state.dwell.toFixed(1);
+}
+var toastTimer=null;
+function toast(msg,ms){
+  var t=document.getElementById("toast");
+  t.textContent=msg; t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){t.classList.remove("show");},ms||2000);
+}
+
+/* ---------- 老師設定 ---------- */
+var panel=document.getElementById("panel"),
+    rNum=document.getElementById("rNum"), rDwell=document.getElementById("rDwell"),
+    ckTwo=document.getElementById("ckTwo"), ckSound=document.getElementById("ckSound");
+
+function clampInt(v){v=parseInt(v,10);if(isNaN(v))v=3;return Math.max(1,Math.min(9,v));}
+function clampDwell(v){v=parseFloat(v);if(isNaN(v))v=1.0;v=Math.round(v*10)/10;return Math.max(0.1,Math.min(2.0,v));}
+
+function loadCfg(){
+  try{
+    var o=JSON.parse(localStorage.getItem(KEY)||"null");
+    if(o&&typeof o==="object"){
+      if(o.count>=1) state.count=clampInt(o.count);
+      if(o.dwell>=0.1) state.dwell=clampDwell(o.dwell);
+      if(typeof o.sound==="boolean") state.sound=o.sound;
+      if(typeof o.two==="boolean") state.two=o.two;
+    }
+  }catch(e){}
+  try{
+    var q=new URLSearchParams(location.search);
+    if(q.has("n")) state.count=clampInt(q.get("n"));
+    if(q.has("dwell")) state.dwell=clampDwell(q.get("dwell"));
+    if(q.has("two")) state.two=(q.get("two")!=="0");
+    if(q.has("sound")) state.sound=(q.get("sound")!=="0");
+  }catch(e){}
+}
+function saveCfg(){try{localStorage.setItem(KEY,JSON.stringify(state));}catch(e){}}
+
+function syncPanel(){
+  rNum.value=state.count; rDwell.value=state.dwell;
+  ckTwo.checked=state.two; ckSound.checked=state.sound;
+  document.getElementById("vNum").textContent=state.count;
+  document.getElementById("vDwell").textContent=state.dwell.toFixed(1)+" 秒";
+  updateHUD();
+}
+rNum.addEventListener("input",function(){state.count=clampInt(this.value);saveCfg();syncPanel();buildScene();});
+rDwell.addEventListener("input",function(){state.dwell=clampDwell(this.value);saveCfg();syncPanel();});
+ckTwo.addEventListener("change",function(){state.two=this.checked;saveCfg();buildScene();});
+ckSound.addEventListener("change",function(){state.sound=this.checked;saveCfg();if(state.sound){AC();sfxOpen();}});
+
+function openPanel(){panel.classList.add("open");syncPanel();}
+function closePanel(){panel.classList.remove("open");}
+document.getElementById("btnSet").addEventListener("dblclick",openPanel);
+document.getElementById("btnSet").addEventListener("click",function(){toast("請「雙擊」開啟老師設定",1600);});
+document.getElementById("btnClose").addEventListener("click",closePanel);
+document.getElementById("btnRestart").addEventListener("click",function(){buildScene();toast("已重新開始",1400);});
+document.getElementById("btnDefault").addEventListener("click",function(){
+  state={count:DEF.count,dwell:DEF.dwell,sound:DEF.sound,two:DEF.two};
+  saveCfg();syncPanel();buildScene();toast("已回到預設值",1600);
+});
+function toggleFull(){
+  var d=document.documentElement;
+  if(!document.fullscreenElement){if(d.requestFullscreen)d.requestFullscreen();}
+  else{if(document.exitFullscreen)document.exitFullscreen();}
+}
+document.getElementById("btnFull").addEventListener("click",toggleFull);
+document.addEventListener("keydown",function(e){
+  var k=(e.key||"").toLowerCase();
+  if(k==="f") toggleFull();
+  else if(k==="r"){buildScene();toast("已重新開始",1400);}
+  else if(k==="s"){panel.classList.contains("open")?closePanel():openPanel();}
+  else if(k==="escape"){closePanel();}
+});
+window.addEventListener("pointerdown",function(){if(state.sound)AC();},{once:true});
+
+/* ---------- 啟動 ---------- */
+loadCfg(); syncPanel(); buildScene(); fit();
+})();
+</script>
+
+</body>
+</html>

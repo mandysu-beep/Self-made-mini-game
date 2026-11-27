@@ -1,0 +1,291 @@
+/* 目目眼動遊戲收藏：目錄、遊戲介紹、播放頁樣式。色彩一律引用 tokens.css 的品牌色。
+   造型原則：
+   - 不做方角：卡片、篩選磚是有點手作感的「卵石形」不等圓角；按鈕一律是膠囊形；裝飾是正圓。
+   - 沿用品牌「平面色塊重疊」：不用模糊陰影、不用漸層。立體感用下方一條實色「唇邊」（offset 實色），
+     滑過時唇邊變厚、元素往上浮。
+   - 眼控友善：可點區域至少 120px 寬、80px 高（主要按鈕 120px 高），間距寬；凝視停留時底部出現進度條。 */
+@font-face{font-family:"Lato";font-weight:700;src:url(../fonts/Lato-Bold.ttf) format("truetype");font-display:swap}
+@font-face{font-family:"Lato";font-weight:900;src:url(../fonts/Lato-Black.ttf) format("truetype");font-display:swap}
+@font-face{font-family:"Quattrocento Sans";font-weight:400;src:url(../fonts/QuattrocentoSans-Regular.ttf) format("truetype");font-display:swap}
+@font-face{font-family:"Quattrocento Sans";font-weight:700;src:url(../fonts/QuattrocentoSans-Bold.ttf) format("truetype");font-display:swap}
+
+:root{
+  --font-ui:"Microsoft JhengHei","Noto Sans TC","Segoe UI",sans-serif;
+  /* 卵石形圓角：四角略不同，像手捏的 */
+  --pebble:44px 52px 40px 56px / 50px 42px 54px 40px;
+  --pebble-s:30px 36px 28px 38px / 34px 28px 36px 30px;
+  --ease-out:cubic-bezier(.2,.8,.2,1);
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+  --lip:var(--teal-100);
+  --gap:clamp(20px,2.4vw,36px);
+  --edge:clamp(20px,3.6vw,56px);
+}
+*{box-sizing:border-box}
+html{background:var(--cream)}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:var(--font-ui);font-size:20px;line-height:1.7;-webkit-font-smoothing:antialiased}
+a{color:var(--teal)}
+img{max-width:100%}
+.num{font-family:var(--font-numeral)}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+:focus-visible{outline:5px solid var(--orange-deep);outline-offset:5px}
+.ico{width:1.15em;height:1.15em;flex:none;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.ico .fill{fill:currentColor;stroke:none}
+
+/* ================= 按鈕：全部是膠囊形 ================= */
+.btn{position:relative;overflow:hidden;isolation:isolate;display:inline-flex;align-items:center;justify-content:center;gap:12px;
+  min-height:80px;min-width:120px;padding:0 34px;border:0;border-radius:var(--radius-pill);
+  font:700 24px/1.3 var(--font-ui);text-decoration:none;cursor:pointer;user-select:none;
+  background:var(--white);color:var(--forest);box-shadow:0 6px 0 var(--lip);
+  transition:transform .28s var(--ease-spring),box-shadow .28s var(--ease-out),background-color .2s,color .2s}
+.btn:hover,.btn:focus-visible{transform:translateY(-4px);box-shadow:0 10px 0 var(--lip)}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--lip);transition-duration:.08s}
+.btn-main{background:var(--teal);color:var(--white);--lip:var(--forest)}
+.btn-main:hover,.btn-main:focus-visible{background:var(--forest);--lip:var(--forest-deep)}
+.btn-soft{background:var(--peach);color:var(--forest);--lip:var(--coral)}
+.btn-soft:hover,.btn-soft:focus-visible{background:var(--blush)}
+.btn-cream{background:var(--cream);color:var(--forest);--lip:var(--forest-deep)}
+.btn-yellow{background:var(--yellow);color:var(--forest);--lip:var(--amber-700)}
+.btn-yellow:hover,.btn-yellow:focus-visible{background:var(--yellow-light)}
+.btn-big{min-height:120px;padding:0 60px;font-size:34px;gap:16px}
+.btn-big .ico{width:1em;height:1em}
+.btn-big:hover .ico,.btn-big:focus-visible .ico{animation:nudge .7s var(--ease-spring)}
+@keyframes nudge{40%{transform:translateX(6px) scale(1.15)}}
+
+/* 凝視停留進度條：實色條由左往右填滿 */
+.dwell-bar{position:absolute;left:0;bottom:0;height:12px;width:0;background:var(--orange-deep);pointer-events:none;z-index:3}
+.dwelling>.dwell-bar{width:100%;transition:width var(--dwell-ms,1200ms) linear}
+
+/* 凝視選取開關：膠囊開關，打開時眼睛圓鈕滑到右邊 */
+.btn-switch{gap:14px;padding:0 30px 0 12px;background:var(--white);--lip:var(--teal-100)}
+.btn-switch .knob{display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:var(--gray-light);transition:background-color .25s,transform .35s var(--ease-spring)}
+.btn-switch .eye{width:36px;height:36px}
+.btn-switch[aria-pressed="true"]{background:var(--teal);color:var(--white);--lip:var(--forest)}
+.btn-switch[aria-pressed="true"] .knob{background:var(--amber);transform:rotate(-8deg)}
+.btn-switch b{font-weight:900}
+
+/* 眼睛圖示（卡片角落、開關共用）：琥珀圓盤上兩顆直向橢圓眼，不畫瞳孔 */
+.eye .eye-oval{fill:var(--forest)}
+.eye .eyes{transform-box:fill-box;transform-origin:center;animation:eye-blink 5.5s var(--ease-out) infinite}
+.eye .eye-glance{transform-box:fill-box;transform-origin:center;transition:transform .4s var(--ease-out)}
+@keyframes eye-blink{
+  0%,40%,50%,100%{transform:scaleY(1)}
+  45%{transform:scaleY(.12)}
+}
+
+/* ================= 首頁頁首：阿目和果果飄在琥珀色星球前 ================= */
+.hero{position:relative;overflow:hidden;padding:36px var(--edge) 64px;min-height:440px}
+.hero-top{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.hero .logo{height:72px;width:auto;display:block}
+.hero-text{position:relative;z-index:3;max-width:min(640px,56%);margin-top:56px}
+.hero h1{margin:0;color:var(--forest);font-size:clamp(46px,5.4vw,84px);line-height:1.12;font-weight:900;letter-spacing:.02em}
+.hero .sub{margin:20px 0 0;font-size:clamp(21px,1.6vw,26px);line-height:1.7;color:var(--ink);max-width:28em}
+.hero-sky{position:absolute;inset:0;pointer-events:none}
+.planet{position:absolute;right:-140px;top:-170px;width:clamp(420px,42vw,640px);aspect-ratio:1;border-radius:50%;background:var(--amber);animation:planet-in 1.1s var(--ease-out) both}
+.moon{position:absolute;right:clamp(140px,17vw,300px);bottom:-150px;width:clamp(260px,24vw,380px);aspect-ratio:1;border-radius:50%;background:var(--blush);animation:planet-in 1.1s .12s var(--ease-out) both}
+.dot{position:absolute;border-radius:50%}
+.dot-aqua{width:54px;height:54px;background:var(--aqua);right:clamp(440px,44vw,700px);top:120px;animation:pop .7s .5s var(--ease-spring) both}
+.dot-yellow{width:26px;height:26px;background:var(--yellow);right:clamp(380px,38vw,600px);bottom:70px;animation:pop .7s .65s var(--ease-spring) both}
+.hero-char{position:absolute;right:clamp(90px,10vw,200px);bottom:-10px;height:clamp(300px,30vw,430px);width:auto;
+  animation:char-in .9s .25s var(--ease-out) both,float 7s 1.2s ease-in-out infinite}
+@keyframes planet-in{from{transform:scale(.6);opacity:0}}
+@keyframes pop{from{transform:scale(0)}}
+@keyframes char-in{from{transform:translateY(60px) rotate(6deg);opacity:0}}
+@keyframes float{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-14px) rotate(-2.5deg)}}
+
+/* ================= 篩選：學習目標是卵石磚，其餘收進「更多篩選」 ================= */
+.filters{padding:8px var(--edge) 0}
+/* 磚的最小寬度要放得下「圓點＋四字名稱（27px）＋右上數量」單行不斷行；手機上用 min(100%,…) 避免撐出橫向捲軸 */
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:18px}
+.tile{flex-direction:column;align-items:flex-start;justify-content:flex-start;gap:6px;text-align:left;
+  min-height:140px;padding:20px 76px 22px 26px;border-radius:var(--pebble-s);background:var(--white);--lip:var(--teal-50)}
+.tile:nth-child(3n+2){border-radius:36px 28px 40px 30px / 30px 38px 28px 36px}
+.tile:nth-child(3n){border-radius:28px 40px 32px 36px / 38px 30px 40px 28px}
+.tile .tname{display:flex;align-items:center;gap:10px;font-size:27px;font-weight:900;line-height:1.3;white-space:nowrap}
+.tile .dot{position:static;width:18px;height:18px;border-radius:50%;background:var(--dot);flex:none;transition:transform .35s var(--ease-spring)}
+.tile .tdesc{display:block;font-size:18px;font-weight:400;line-height:1.5;color:var(--ink)}
+.tile .tcount{position:absolute;right:16px;top:16px;display:grid;place-items:center;min-width:44px;height:44px;padding:0 8px;border-radius:22px;background:var(--cream);font-size:22px;font-weight:700}
+.tile:hover .dot,.tile:focus-visible .dot{transform:scale(1.5)}
+.tile.is-active{background:var(--teal);color:var(--white);--lip:var(--forest)}
+.tile.is-active .tdesc{color:var(--white)}
+.tile.is-active .tcount{background:var(--forest)}
+.tile.is-active .dot{box-shadow:0 0 0 4px var(--white)}
+
+.more{margin-top:26px}
+.more summary{list-style:none;min-height:80px}
+.more summary::-webkit-details-marker{display:none}
+.more summary::after{content:"";width:14px;height:14px;border:solid currentColor;border-width:0 4px 4px 0;transform:rotate(45deg) translateY(-3px);transition:transform .3s var(--ease-spring)}
+.more[open] summary::after{transform:rotate(-135deg) translateY(-3px)}
+.more-body{display:flex;flex-wrap:wrap;gap:20px 56px;padding:24px 4px 4px;animation:drop-in .35s var(--ease-out)}
+@keyframes drop-in{from{opacity:0;transform:translateY(-10px)}}
+.chip-row{display:flex;flex-wrap:wrap;align-items:center;gap:14px}
+.chip-row .label{font-size:22px;font-weight:900;color:var(--forest);min-width:4.5em}
+.chips{display:flex;flex-wrap:wrap;gap:14px}
+.chip{min-height:80px;min-width:120px;font-size:23px;--lip:var(--teal-50)}
+.chip.is-active{background:var(--teal);color:var(--white);--lip:var(--forest)}
+
+.result-line{margin:0;padding:30px var(--edge) 0;font-size:21px}
+.result-line b{color:var(--forest);font-size:30px;margin:0 2px}
+
+/* ================= 遊戲卡片：整張就是一個大按鈕 ================= */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,370px),1fr));gap:var(--gap);padding:22px var(--edge) 80px}
+.card{position:relative;overflow:hidden;isolation:isolate;display:flex;flex-direction:column;padding:14px 14px 0;
+  border-radius:var(--pebble);background:var(--white);color:var(--ink);text-decoration:none;
+  box-shadow:0 8px 0 var(--lip);
+  transition:transform .4s var(--ease-spring),box-shadow .4s var(--ease-out);
+  animation:card-in .7s var(--ease-out) backwards;animation-delay:calc(var(--i,0) * 70ms + .15s)}
+.card:nth-child(2n){border-radius:52px 42px 56px 44px / 42px 54px 40px 50px}
+.card:nth-child(3n){border-radius:40px 56px 46px 50px / 54px 44px 50px 42px}
+.grid.is-refilter .card{animation-duration:.45s;animation-delay:calc(var(--i,0) * 35ms)}
+.vt-arrive .card{animation:none}
+@keyframes card-in{from{opacity:0;transform:translateY(36px) scale(.96)}}
+.card .cover{position:relative;aspect-ratio:16/10;overflow:hidden;border-radius:32px 38px 30px 36px / 34px 30px 36px 30px;background:var(--teal-50)}
+.card .cover img{display:block;width:100%;height:100%;object-fit:cover;transition:transform .6s var(--ease-out)}
+.card .flag{position:absolute;left:14px;top:14px;padding:6px 16px;border-radius:var(--radius-pill);background:var(--yellow);color:var(--forest);font-size:19px;font-weight:900}
+.card .body{display:flex;flex-direction:column;gap:8px;padding:18px 16px 30px;flex:1}
+.cat{display:flex;align-items:center;gap:10px;margin:0;color:var(--forest);font-size:19px;font-weight:700}
+.cat .dot{position:static;width:14px;height:14px;border-radius:50%;background:var(--dot);flex:none}
+.card .tags,.card .vline{padding-right:92px}
+.card h3{margin:0;color:var(--forest);font-size:31px;line-height:1.25;font-weight:900}
+.card h3 small{display:inline-block;margin-left:10px;font-size:20px;font-weight:500;color:var(--teal)}
+.card .summary{margin:0;font-size:19px;line-height:1.65}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 0}
+.tag{padding:3px 14px;border-radius:var(--radius-pill);background:var(--cream);color:var(--ink);font-size:17px;line-height:1.5}
+.tag.input{background:var(--teal-50);color:var(--forest);font-weight:700}
+.vline{margin:auto 0 0;padding-top:6px;font-size:17px;color:var(--ink)}
+.vline .num{color:var(--forest);font-weight:700;font-size:19px}
+/* 右下角的琥珀色圓盤：維持原尺寸與位置；滑過時只有裡頭的眼睛輕輕看過去 */
+.peek{position:absolute;right:18px;bottom:22px;display:grid;place-items:center;width:76px;height:76px;border-radius:50%;background:var(--amber);
+  transition:transform .45s var(--ease-spring)}
+.peek .eye{width:48px;height:48px}
+.card:hover,.card:focus-visible{transform:translateY(-8px) rotate(-.6deg);box-shadow:0 16px 0 var(--lip)}
+.card:nth-child(2n):hover,.card:nth-child(2n):focus-visible{transform:translateY(-8px) rotate(.6deg)}
+.card:hover .cover img,.card:focus-visible .cover img{transform:scale(1.06)}
+.card:hover .eye .eye-glance,.card:focus-visible .eye .eye-glance{transform:translate(3px,-1.5px)}
+.btn-switch:hover .eye .eye-glance,.btn-switch:focus-visible .eye .eye-glance{transform:translate(2px,-1px)}
+.card:active{transform:translateY(-2px);box-shadow:0 6px 0 var(--lip);transition-duration:.1s}
+.card .dwell-bar{height:14px}
+
+.ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;overflow:hidden;background:var(--forest);color:var(--cream);text-align:center;padding:20px}
+.ph-disc{position:absolute;right:-50px;top:-60px;width:220px;height:220px;border-radius:50%;background:var(--amber)}
+.ph-text{position:relative;font-size:30px;font-weight:900;line-height:1.35}
+.ph-text small{display:block;font-size:19px;font-weight:400}
+
+.empty{grid-column:1/-1;display:flex;align-items:center;gap:28px;padding:20px 0;font-size:24px;color:var(--forest)}
+.empty img{width:170px;height:auto;flex:none}
+.empty p{margin:0;max-width:26em}
+.pmsg{padding:40px var(--edge);font-size:24px;color:var(--forest)}
+
+/* ================= 頁尾：品牌黃色底線 ================= */
+.site-foot{display:flex;align-items:flex-end;justify-content:space-between;gap:32px;flex-wrap:wrap;
+  padding:36px var(--edge) 40px;border-bottom:var(--space-rule) solid var(--yellow);background:var(--white);border-radius:56px 56px 0 0}
+.site-foot p{margin:0 0 8px;max-width:40em;font-size:19px}
+.site-foot .fine{font-size:16px;color:var(--ink)}
+.site-foot .wordmark{height:64px;width:auto}
+
+/* ================= 遊戲介紹頁 ================= */
+.topnav{display:flex;align-items:center;gap:24px;flex-wrap:wrap;padding:30px var(--edge) 0}
+.topnav .logo{height:64px;width:auto;display:block}
+.logo-link{border-radius:20px;display:block}
+.nav-space{flex:1}
+.detail{padding:32px var(--edge) 80px;display:flex;flex-direction:column;gap:48px}
+.intro{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:clamp(28px,4vw,64px);align-items:center}
+.intro-cover{position:relative;aspect-ratio:16/10;overflow:hidden;border-radius:var(--pebble);background:var(--forest);
+  box-shadow:14px 14px 0 var(--dot,var(--amber));view-transition-name:game-cover}
+.intro-cover img{display:block;width:100%;height:100%;object-fit:cover}
+.intro .cat{font-size:22px}
+.intro .cat .dot{width:18px;height:18px}
+.intro h1{margin:10px 0 0;color:var(--forest);font-size:clamp(42px,4.4vw,68px);line-height:1.15;font-weight:900}
+.gsub{margin:4px 0 0;font-size:26px;color:var(--teal);font-weight:700}
+.gsum{margin:18px 0 0;font-size:23px;line-height:1.75;max-width:30em}
+.play-row{position:relative;display:flex;align-items:flex-end;gap:8px;margin-top:30px}
+.play-row .cheer{height:150px;width:auto;margin-left:-18px;margin-bottom:-8px;transform-origin:50% 100%;animation:cheer-in .8s .35s var(--ease-spring) backwards}
+.play-row .btn:hover+.cheer,.play-row .btn:focus-visible+.cheer{animation:hop .6s var(--ease-spring)}
+@keyframes cheer-in{from{transform:translateY(30px) scale(.6);opacity:0}}
+@keyframes hop{40%{transform:translateY(-16px) rotate(6deg)}}
+.play-meta{margin:16px 0 0;font-size:18px}
+.note{margin:0;padding:18px 28px;border-radius:var(--pebble-s);background:var(--yellow);color:var(--forest);font-size:21px;font-weight:700}
+.facts-wrap h2,.versions h2{margin:0 0 18px;color:var(--forest);font-size:34px;font-weight:900}
+.facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:16px;margin:0}
+.facts>div{padding:20px 26px;border-radius:var(--pebble-s);background:var(--white)}
+.facts>div:nth-child(2n){border-radius:36px 28px 40px 30px / 30px 38px 28px 36px}
+.facts dt{color:var(--teal);font-size:18px;font-weight:700}
+.facts dd{margin:4px 0 0;font-size:21px;line-height:1.6}
+.vlist{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,420px),1fr));gap:20px}
+.vcard{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:24px 30px 28px;border-radius:var(--pebble);background:var(--white)}
+.vcard.is-default{background:var(--teal-50)}
+.vhead{display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+.vid{font-size:44px;font-weight:700;line-height:1;color:var(--forest)}
+.vlabel{font-size:23px;font-weight:900;color:var(--forest)}
+.vdate{font-size:20px}
+.vbadge{padding:2px 14px;border-radius:var(--radius-pill);background:var(--teal);color:var(--white);font-size:17px;font-weight:700}
+.vcard p,.vcard ul{margin:0;font-size:19px;line-height:1.65}
+.vcard ul{padding-left:1.2em}
+.vcard .vsrc{font-size:17px}
+.vcard .btn{margin-top:10px}
+
+/* ================= 播放頁 ================= */
+body.player{height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;background:var(--forest)}
+.pbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px 18px;min-height:104px;color:var(--white)}
+.pbar .ptitle{display:flex;align-items:baseline;gap:10px;margin:0 6px;font-size:30px;font-weight:900;white-space:nowrap}
+.pbar .ptitle .num{font-size:24px;color:var(--yellow-light);font-weight:700}
+.pbar .vers{display:flex;gap:10px}
+.pbar .ver{min-width:120px;background:var(--forest-deep);color:var(--cream);--lip:var(--teal-900)}
+.pbar .ver.is-active{background:var(--aqua);color:var(--forest);--lip:var(--teal)}
+.pbar .spacer{flex:1}
+.pbar .wordmark{height:50px;width:auto;margin-left:6px}
+.stage{flex:1;position:relative;margin:0 12px 12px;overflow:hidden;border-radius:30px;background:var(--white);animation:stage-in .5s var(--ease-out) both}
+.stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block}
+.stage:fullscreen{margin:0;border-radius:0;background:#000}
+.player .pmsg{color:var(--forest)}
+@keyframes stage-in{from{opacity:0;transform:scale(.98)}}
+
+/* ================= 換頁轉場 ================= */
+/* 1. 原生跨頁 View Transitions：整頁輕輕淡入上移；被點的卡片封面放大成介紹頁大圖 */
+@view-transition{navigation:auto}
+::view-transition-old(root){animation:vt-out .28s var(--ease-out) both}
+::view-transition-new(root){animation:vt-in .42s var(--ease-out) both}
+::view-transition-group(game-cover){animation-duration:.55s;animation-timing-function:cubic-bezier(.3,.9,.25,1)}
+::view-transition-old(game-cover),::view-transition-new(game-cover){height:100%;object-fit:cover}
+@keyframes vt-out{to{opacity:0;transform:translateY(-14px)}}
+@keyframes vt-in{from{opacity:0;transform:translateY(18px)}}
+/* 2. 不支援時（html.no-vt）：淡入；點連結時 JS 加 is-leaving 淡出 */
+.no-vt body{animation:page-in .4s var(--ease-out) backwards}
+.no-vt.is-leaving body{opacity:0;transform:translateY(-10px);transition:opacity .2s ease-in,transform .2s ease-in}
+@keyframes page-in{from{opacity:0;transform:translateY(14px)}}
+
+/* ================= 減少動態：關掉所有動畫與轉場 ================= */
+@media (prefers-reduced-motion:reduce){
+  @view-transition{navigation:none}
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  .btn:hover,.btn:focus-visible,.card:hover,.card:focus-visible{transform:none}
+  .card:hover .cover img,.card:focus-visible .cover img{transform:none}
+  .card:hover .peek,.card:focus-visible .peek,.card.dwelling .peek{transform:none}
+  .card:hover .eye .eye-glance,.card:focus-visible .eye .eye-glance,
+  .btn-switch:hover .eye .eye-glance,.btn-switch:focus-visible .eye .eye-glance{transform:none}
+  .no-vt.is-leaving body{opacity:1;transform:none}
+  /* 凝視進度條是功能性回饋，保留但改為瞬間顯示進度色框 */
+  .dwelling{outline:6px solid var(--orange-deep);outline-offset:3px}
+}
+
+/* ================= 窄螢幕 ================= */
+@media (max-width:1000px){
+  .hero{min-height:0;padding-bottom:300px}
+  .hero-text{max-width:100%;margin-top:36px}
+  .hero-char{height:270px;right:50%;transform:translateX(50%);bottom:-6px;animation:none}
+  .planet{right:-120px;top:auto;bottom:-260px;width:520px}
+  .moon{right:auto;left:-100px;bottom:-130px;width:260px}
+  .dot-aqua{right:auto;left:30px;top:auto;bottom:220px}
+  .dot-yellow{right:40px;bottom:250px}
+  .intro{grid-template-columns:1fr}
+}
+@media (max-width:640px){
+  body{font-size:19px}
+  .hero .logo{height:56px}
+  .card h3{font-size:27px}
+  .tile{min-height:120px;padding:18px 70px 20px 22px}
+  .tile .tdesc{font-size:17px}
+  .btn-big{width:100%;padding:0 30px}
+  .play-row .cheer{height:110px}
+  .pbar .wordmark{display:none}
+  .empty{flex-direction:column;align-items:flex-start}
+}
