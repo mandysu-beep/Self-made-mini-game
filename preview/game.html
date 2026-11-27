@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>遊戲介紹｜目目眼動遊戲收藏</title>
+<link rel="icon" href="assets/brand/muve-mark.png">
+<link rel="expect" href="#render-ready" blocking="render">
+<script>(function(h){if(!("PageRevealEvent" in window))h.classList.add("no-vt");addEventListener("pagereveal",function(e){if(e.viewTransition)h.classList.add("vt-arrive")})})(document.documentElement)</script>
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/site.css">
+</head>
+<body class="page-game">
+<nav class="topnav" aria-label="網站導覽">
+  <a class="logo-link" href="index.html"><img class="logo" src="assets/brand/muve-logo-horizontal.png" alt="目目非營利 MUVE NPO，回到目錄"></a>
+  <a class="btn btn-soft btn-back" href="index.html"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>回到目錄</a>
+  <span class="nav-space"></span>
+  <span id="dwellSlot"></span>
+</nav>
+<main class="detail" id="main"></main>
+<footer class="site-foot">
+  <div class="foot-text">
+    <p>每一版都是獨立的檔案，舊版會一直保留，可以隨時打開對照。</p>
+  </div>
+  <img class="wordmark" src="assets/brand/muve-wordmark-dark.png" alt="目目非營利 MUVE NPO">
+</footer>
+<script src="assets/js/app.js"></script>
+<script>MuveApp.init("game")</script>
+<span id="render-ready" hidden></span>
+</body>
+</html>

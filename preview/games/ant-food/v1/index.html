@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>螞蟻搬食物 - 眼動復健互動小遊戲</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap');
+
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Zen Maru Gothic', 'Noto Sans TC', sans-serif;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    /* 螞蟻腳步運動動畫 */
+    @keyframes leg-wiggle-1 {
+      0%, 100% { transform: rotate(-12deg); }
+      50% { transform: rotate(18deg); }
+    }
+    @keyframes leg-wiggle-2 {
+      0%, 100% { transform: rotate(16deg); }
+      50% { transform: rotate(-14deg); }
+    }
+    @keyframes ant-bob {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-7px) rotate(1.5deg); }
+    }
+
+    .animate-leg-1 {
+      transform-origin: 50% 15%;
+      animation: leg-wiggle-1 0.28s infinite alternate ease-in-out;
+    }
+    .animate-leg-2 {
+      transform-origin: 50% 15%;
+      animation: leg-wiggle-2 0.28s infinite alternate ease-in-out;
+    }
+    .animate-walking {
+      animation: ant-bob 0.28s infinite alternate ease-in-out;
+    }
+
+    /* 凝視目標外圍發光 */
+    .gaze-target {
+      position: relative;
+      cursor: crosshair;
+      transition: filter 0.15s ease;
+    }
+    .gaze-target.is-gazing {
+      filter: drop-shadow(0 0 25px rgba(250, 204, 21, 0.95)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.9));
+    }
+
+    /* 彩帶掉落動畫 */
+    .confetti {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      opacity: 0.9;
+      pointer-events: none;
+      animation: confetti-fall 3.2s linear forwards;
+    }
+    @keyframes confetti-fall {
+      0% {
+        transform: translateY(-50px) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(105vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body class="w-screen h-screen bg-sky-200 select-none flex flex-col justify-between relative overflow-hidden">
+
+  <!-- ===============================
+       頂部：教師控制列 (精緻緊湊、清楚)
+       =============================== -->
+  <header class="z-30 w-full bg-amber-900/90 backdrop-blur-md text-white px-4 py-2 flex flex-wrap items-center justify-between shadow-lg border-b-2 border-amber-950 text-sm md:text-base gap-2">
+    <!-- 左側標題與目前進度 -->
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 font-bold text-amber-200 text-base md:text-lg">
+        <span class="text-2xl">🐜</span>
+        <span>螞蟻搬食物</span>
+      </div>
+      <!-- 進度指示 -->
+      <div class="bg-amber-800/80 px-3 py-1 rounded-full border border-amber-600/60 font-semibold flex items-center gap-2">
+        <span class="text-amber-200 text-xs">完成進度:</span>
+        <span id="progress-text" class="text-white text-base font-extrabold tracking-wider">0 / 5 隻</span>
+      </div>
+    </div>
+
+    <!-- 中間控制器群 -->
+    <div class="flex flex-wrap items-center gap-3 md:gap-5">
+      <!-- 凝視秒數調整 (0.2s - 1.0s) -->
+      <div class="flex items-center gap-2 bg-amber-950/60 px-3 py-1 rounded-xl border border-amber-700/50">
+        <label for="dwell-slider" class="text-amber-200 text-xs md:text-sm font-medium whitespace-nowrap">👁️ 凝視門檻:</label>
+        <input id="dwell-slider" type="range" min="0.2" max="1.0" step="0.1" value="0.5" 
+               class="w-20 md:w-28 accent-yellow-400 cursor-pointer">
+        <span id="dwell-value" class="text-yellow-300 font-mono font-bold w-10 text-center">0.5s</span>
+      </div>
+
+      <!-- 目標隻數設定 (1 - 20) -->
+      <div class="flex items-center gap-2 bg-amber-950/60 px-3 py-1 rounded-xl border border-amber-700/50">
+        <label for="target-count" class="text-amber-200 text-xs md:text-sm font-medium whitespace-nowrap">🎯 目標隻數:</label>
+        <select id="target-count" class="bg-amber-900 text-white font-bold rounded-lg px-2 py-0.5 border border-amber-600 text-xs md:text-sm cursor-pointer outline-none">
+          <option value="1">1 隻</option>
+          <option value="2">2 隻</option>
+          <option value="3">3 隻</option>
+          <option value="4">4 隻</option>
+          <option value="5" selected>5 隻</option>
+          <option value="6">6 隻</option>
+          <option value="7">7 隻</option>
+          <option value="8">8 隻</option>
+          <option value="9">9 隻</option>
+          <option value="10">10 隻</option>
+        </select>
+      </div>
+
+      <!-- 食物選擇 -->
+      <div class="flex items-center gap-1.5 bg-amber-950/60 p-1 rounded-xl border border-amber-700/50">
+        <span class="text-amber-200 text-xs md:text-sm font-medium pl-1 hidden sm:inline">食物:</span>
+        <button id="btn-food-cake" class="px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold transition flex items-center gap-1 bg-yellow-500 text-amber-950 shadow">
+          🍰 蛋糕
+        </button>
+        <button id="btn-food-candy" class="px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold transition flex items-center gap-1 bg-amber-800/80 text-amber-200 hover:bg-amber-700">
+          🍭 棒棒糖
+        </button>
+      </div>
+    </div>
+
+    <!-- 右側功能鍵：聲音與全螢幕 -->
+    <div class="flex items-center gap-2">
+      <!-- BGM 切換 -->
+      <button id="btn-bgm" class="px-2.5 py-1 rounded-lg bg-amber-800 hover:bg-amber-700 text-xs md:text-sm font-bold flex items-center gap-1 transition" title="音樂開關">
+        <span id="bgm-icon">🎵</span>
+        <span id="bgm-status" class="hidden md:inline">音樂:開</span>
+      </button>
+
+      <!-- 重置按鈕 -->
+      <button id="btn-reset" class="px-2.5 py-1 rounded-lg bg-orange-600 hover:bg-orange-500 text-white text-xs md:text-sm font-bold transition shadow" title="重置本局">
+        🔄 重來
+      </button>
+
+      <!-- 全螢幕切換 -->
+      <button id="btn-fullscreen" class="px-2 py-1 rounded-lg bg-amber-800 hover:bg-amber-700 text-xs md:text-sm font-bold transition" title="全螢幕切換">
+        ⛶
+      </button>
+    </div>
+  </header>
+
+  <!-- ===============================
+       主要場景區：大自然草地與路徑
+       =============================== -->
+  <main id="game-stage" class="relative flex-1 w-full overflow-hidden">
+    <!-- 天空背景雲朵 -->
+    <div class="absolute inset-0 pointer-events-none opacity-40">
+      <div class="absolute top-8 left-16 w-36 h-12 bg-white rounded-full blur-[1px]"></div>
+      <div class="absolute top-12 left-28 w-24 h-10 bg-white rounded-full blur-[1px]"></div>
+      <div class="absolute top-20 right-48 w-44 h-14 bg-white rounded-full blur-[1px]"></div>
+      <div class="absolute top-14 right-32 w-28 h-10 bg-white rounded-full blur-[1px]"></div>
+    </div>
+
+    <!-- 遠景草嶺山丘 -->
+    <div class="absolute bottom-40 w-full h-48 bg-emerald-600/60 rounded-t-[50%] scale-x-125 transform translate-y-12 pointer-events-none"></div>
+    <div class="absolute bottom-32 w-full h-48 bg-emerald-500 rounded-t-[60%] scale-x-110 pointer-events-none"></div>
+
+    <!-- 地面與泥土跑道 -->
+    <div class="absolute bottom-0 w-full h-36 bg-amber-700 border-t-8 border-emerald-400">
+      <!-- 跑道泥土紋理 -->
+      <div class="absolute inset-0 bg-[radial-gradient(#92400e_2px,transparent_2px)] [background-size:24px_24px] opacity-40"></div>
+      <!-- 爬行虛線路徑引導 -->
+      <div class="absolute top-10 left-12 right-28 h-2 border-b-4 border-dashed border-amber-900/30"></div>
+    </div>
+
+    <!-- 左側：起點（綠意盎然的大草叢與野花） -->
+    <div class="absolute left-0 bottom-16 w-36 md:w-52 pointer-events-none flex items-end">
+      <!-- 草叢裝飾 -->
+      <div class="relative w-full h-52 flex items-end">
+        <div class="w-16 h-36 bg-emerald-600 rounded-t-full -rotate-12 translate-x-3 shadow-md"></div>
+        <div class="w-20 h-44 bg-emerald-500 rounded-t-full rotate-6 shadow-md -translate-x-2"></div>
+        <div class="w-14 h-32 bg-emerald-700 rounded-t-full -rotate-6 -translate-x-4"></div>
+        <div class="w-16 h-40 bg-emerald-400 rounded-t-full rotate-12 -translate-x-8"></div>
+        <!-- 小花 -->
+        <div class="absolute bottom-10 left-16 text-3xl animate-bounce" style="animation-duration: 2.4s;">🌼</div>
+        <div class="absolute bottom-20 left-6 text-2xl animate-bounce" style="animation-duration: 3s;">🌸</div>
+      </div>
+    </div>
+
+    <!-- 右側：終點（朝向左側開口的巨大蟻丘山洞隧道） -->
+    <div id="ant-hill-target" class="absolute right-0 bottom-14 w-80 md:w-96 h-80 pointer-events-none flex items-center justify-end z-20">
+      <div class="relative w-full h-full flex items-center justify-end">
+        <!-- 蟻丘主體山包 (SVG 呈現自然的泥土拱形與朝左敞開的深邃洞穴) -->
+        <svg viewBox="0 0 380 300" class="w-full h-full drop-shadow-2xl overflow-visible">
+          <defs>
+            <!-- 洞穴內部漸層（左淺右深，營造深不見底的隧道感） -->
+            <linearGradient id="cave-interior-grad" x1="0%" y1="50%" x2="100%" y2="50%">
+              <stop offset="0%" stop-color="#2a1810" />
+              <stop offset="35%" stop-color="#140a06" />
+              <stop offset="100%" stop-color="#050201" />
+            </linearGradient>
+            <!-- 洞口邊緣土層漸層 -->
+            <linearGradient id="mound-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#92400e" />
+              <stop offset="60%" stop-color="#78350f" />
+              <stop offset="100%" stop-color="#451a03" />
+            </linearGradient>
+            <!-- 洞頂陰影 -->
+            <linearGradient id="rim-shadow" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#291206" stop-opacity="0.9" />
+              <stop offset="100%" stop-color="#78350f" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+
+          <!-- 蟻丘大土丘外觀（向左微凸，覆蓋整個右側） -->
+          <path d="M 120 18 C 50 80, 20 220, 0 300 L 380 300 L 380 18 Z" fill="url(#mound-grad)" />
+
+          <!-- 蟻丘表面的草叢與苔蘚點綴 -->
+          <ellipse cx="140" cy="30" rx="36" ry="14" fill="#15803d" />
+          <ellipse cx="90" cy="90" rx="24" ry="10" fill="#16a34a" transform="rotate(-15 90 90)" />
+
+          <!-- 朝左開口的深邃洞穴主入口（拱形大嘴隧道，高度與跑道嚴格平行） -->
+          <!-- 洞穴後壁/內部陰影 -->
+          <path d="M 115 75 C 65 75, 40 120, 40 180 C 40 240, 65 285, 115 285 L 380 285 L 380 75 Z" fill="url(#cave-interior-grad)" />
+          
+          <!-- 洞口拱形外沿立體厚度包邊（朝左方向迎接螞蟻） -->
+          <path d="M 115 65 C 55 65, 25 115, 25 180 C 25 245, 55 295, 115 295 C 80 295, 55 240, 55 180 C 55 120, 80 65, 115 65 Z" fill="#b45309" opacity="0.9" />
+          <path d="M 115 72 C 60 72, 35 120, 35 180 C 35 240, 60 288, 115 288" stroke="#451a03" stroke-width="7" fill="none" stroke-linecap="round" />
+
+          <!-- 洞頂向下的自然懸垂陰影 -->
+          <path d="M 45 140 C 45 100, 75 75, 125 75 L 380 75 L 380 130 C 260 130, 160 130, 45 140 Z" fill="url(#rim-shadow)" />
+        </svg>
+
+        <!-- 洞內深處的大尺寸食物儲存展示區（位於隧道右側內部，外觀融入洞中） -->
+        <div class="absolute right-4 top-1/2 -translate-y-1/2 w-44 md:w-56 h-48 flex items-center justify-center pr-2 pointer-events-none">
+          <div id="cave-storage" class="flex flex-wrap items-center justify-center gap-2 max-h-44 overflow-hidden w-full">
+            <!-- 累積存放特大食物 -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===============================
+         核心角色：搬食物的巨大螞蟻！
+         =============================== -->
+    <div id="ant-walker" 
+         class="gaze-target absolute bottom-24 left-10 flex flex-col items-center justify-center cursor-pointer select-none transition-transform z-10"
+         style="width: 250px; height: 260px; will-change: transform, left;">
+      
+      <!-- 凝視進度環 (Dwell SVG Indicator，無任何文字) -->
+      <div id="gaze-indicator-wrap" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-150 z-20">
+        <svg class="w-56 h-56 -rotate-90 filter drop-shadow-[0_0_12px_rgba(250,204,21,0.9)]" viewBox="0 0 120 120">
+          <!-- 背景底軌 -->
+          <circle cx="60" cy="60" r="52" fill="rgba(254, 240, 138, 0.2)" stroke="rgba(255,255,255,0.4)" stroke-width="8" />
+          <!-- 動態填滿進度條 -->
+          <circle id="gaze-circle-progress" cx="60" cy="60" r="52" fill="none" stroke="#facc15" stroke-width="8"
+                  stroke-dasharray="326.72" stroke-dashoffset="326.72" stroke-linecap="round" />
+        </svg>
+      </div>
+
+      <!-- 螞蟻頭頂/背上的超大食物容器 -->
+      <div id="food-container" class="relative z-10 -mb-6 transform transition-transform hover:scale-105 duration-200">
+        <!-- SVG 食物 (蛋糕 / 棒棒糖) 將由 JS 動態注入渲染 -->
+      </div>
+
+      <!-- 巨大卡通螞蟻本體 (SVG) -->
+      <div id="ant-body-wrapper" class="relative w-48 h-36 flex items-center justify-center">
+        <svg viewBox="0 0 200 130" class="w-full h-full filter drop-shadow-md">
+          <!-- 觸角 (左右兩根，可愛圓球) -->
+          <path d="M 155 35 Q 170 10 185 18" stroke="#1c1917" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+          <circle cx="186" cy="18" r="4.5" fill="#e11d48"/>
+          <path d="M 148 30 Q 155 5 170 8" stroke="#1c1917" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+          <circle cx="171" cy="8" r="4.5" fill="#e11d48"/>
+
+          <!-- 6隻活力腳 (分組擺動動畫) -->
+          <!-- 後腳 (2隻) -->
+          <g id="legs-back" class="">
+            <path d="M 45 75 Q 30 95 20 118" stroke="#292524" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+            <path d="M 52 75 Q 40 98 32 120" stroke="#292524" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+          </g>
+          <!-- 中腳 (2隻) -->
+          <g id="legs-mid" class="">
+            <path d="M 95 75 Q 92 100 85 122" stroke="#292524" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+            <path d="M 105 75 Q 110 100 115 122" stroke="#292524" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+          </g>
+          <!-- 前腳 (2隻) -->
+          <g id="legs-front" class="">
+            <path d="M 145 75 Q 160 98 172 118" stroke="#292524" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+            <path d="M 135 75 Q 145 98 152 120" stroke="#292524" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+          </g>
+
+          <!-- 螞蟻腹部 (後段，圓滾滾且大) -->
+          <ellipse cx="50" cy="62" rx="34" ry="24" fill="#3f3f46" stroke="#18181b" stroke-width="3"/>
+          <!-- 腹部條紋細節 -->
+          <path d="M 38 46 Q 44 62 38 78" stroke="#71717a" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path d="M 52 42 Q 58 62 52 82" stroke="#71717a" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+          <!-- 螞蟻胸部 (中段) -->
+          <ellipse cx="102" cy="64" rx="22" ry="18" fill="#52525b" stroke="#18181b" stroke-width="3"/>
+
+          <!-- 螞蟻頭部 (前段) -->
+          <ellipse cx="146" cy="54" rx="22" ry="20" fill="#3f3f46" stroke="#18181b" stroke-width="3"/>
+
+          <!-- 大眼睛 (水汪汪卡通風，容易吸引注意) -->
+          <ellipse cx="154" cy="46" rx="9" ry="11" fill="#ffffff" stroke="#18181b" stroke-width="2.5"/>
+          <circle cx="156" cy="46" r="5" fill="#09090b"/>
+          <circle cx="158" cy="43" r="2.2" fill="#ffffff"/>
+
+          <!-- 微笑小嘴巴 -->
+          <path d="M 152 64 Q 160 70 166 62" stroke="#18181b" stroke-width="3" fill="none" stroke-linecap="round"/>
+
+          <!-- 可愛腮紅 -->
+          <circle cx="145" cy="58" r="4.5" fill="#fb7185" opacity="0.8"/>
+        </svg>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===============================
+       通關慶祝 Modal
+       =============================== -->
+  <div id="victory-modal" class="fixed inset-0 bg-stone-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-gradient-to-b from-amber-100 to-yellow-50 border-4 border-yellow-500 rounded-3xl max-w-lg w-full p-6 md:p-8 text-center shadow-2xl transform transition-all scale-95 duration-300">
+      <div class="text-6xl md:text-7xl mb-2 animate-bounce">🏆 🎉 🐜</div>
+      <h2 class="text-3xl md:text-4xl font-black text-amber-900 mb-2">太棒了！任務大成功！</h2>
+      <p id="victory-desc" class="text-amber-800 text-lg md:text-xl font-bold mb-6">
+        我們一起幫螞蟻搬了 5 次食物回家！
+      </p>
+
+      <!-- 戰利品收穫展示 -->
+      <div id="victory-trophy-shelf" class="bg-amber-200/60 p-4 rounded-2xl border-2 border-amber-400 flex flex-wrap justify-center items-center gap-3 mb-6 min-h-[70px]">
+        <!-- JS 動態放入收集到的食物 -->
+      </div>
+
+      <div class="flex justify-center gap-4">
+        <button id="btn-play-again" class="px-8 py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white text-xl font-black rounded-2xl shadow-lg transform active:scale-95 transition flex items-center gap-2">
+          <span>🔁 再玩一次</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 彩帶容器 -->
+  <div id="confetti-container" class="fixed inset-0 pointer-events-none z-40 overflow-hidden"></div>
+
+  <!-- 音樂首次播放友善提示 Toast -->
+  <div id="audio-start-prompt" class="absolute bottom-5 left-1/2 -translate-x-1/2 bg-amber-950/90 text-yellow-300 px-4 py-2 rounded-xl text-xs md:text-sm font-bold border border-yellow-500/50 shadow-xl flex items-center gap-2 z-30 transition-opacity duration-300">
+    <span>💡 點擊畫面任意處即可啟動歡樂背景音樂</span>
+  </div>
+
+  <!-- ===============================
+       JavaScript 邏輯核心
+       =============================== -->
+  <script>
+    /* --------------------------------------------------------
+       音效系統 (Web Audio API 合成，零外部依賴)
+       -------------------------------------------------------- */
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.bgmTimer = null;
+        this.bgmStep = 0;
+        this.isBgmActive = true;
+        this.isSoundActive = true;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      // 滴答/氣泡凝視進度音效 (頻率隨累積時間提升)
+      playGazeTick(progressRatio) {
+        if (!this.isSoundActive || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'sine';
+          // 400Hz 到 800Hz 遞增
+          const freq = 420 + (progressRatio * 450);
+          osc.frequency.setValueAtTime(freq, now);
+
+          gain.gain.setValueAtTime(0.06, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.09);
+        } catch (e) {
+          // 靜音保護
+        }
+      }
+
+      // 螞蟻爬行踏步輕聲
+      playStepSound() {
+        if (!this.isSoundActive || !this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(140 + Math.random() * 40, now);
+          osc.frequency.exponentialRampToValueAtTime(80, now + 0.06);
+
+          gain.gain.setValueAtTime(0.04, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.06);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.07);
+        } catch (e) {}
+      }
+
+      // 單隻抵達樹洞勝利號角
+      playAntArrival() {
+        if (!this.isSoundActive || !this.ctx) return;
+        try {
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+          notes.forEach((freq, idx) => {
+            const now = this.ctx.currentTime + (idx * 0.09);
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(freq, now);
+
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(now);
+            osc.stop(now + 0.3);
+          });
+        } catch (e) {}
+      }
+
+      // 全通關慶祝音效
+      playGameComplete() {
+        if (!this.isSoundActive || !this.ctx) return;
+        try {
+          const melody = [
+            { f: 523.25, d: 0.15 },
+            { f: 523.25, d: 0.15 },
+            { f: 523.25, d: 0.15 },
+            { f: 659.25, d: 0.3 },
+            { f: 783.99, d: 0.3 },
+            { f: 1046.50, d: 0.6 }
+          ];
+          let curTime = this.ctx.currentTime;
+          melody.forEach(note => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(note.f, curTime);
+
+            gain.gain.setValueAtTime(0.15, curTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, curTime + note.d);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(curTime);
+            osc.stop(curTime + note.d);
+            curTime += note.d * 0.9;
+          });
+        } catch (e) {}
+      }
+
+      // 背景音樂循環步進 (可愛輕巧木琴/撥弦感)
+      startBgmLoop() {
+        if (this.bgmTimer) return;
+        // C 大調音階序列 (C4, E4, G4, A4, G4, E4, D4, G3)
+        const scale = [261.63, 329.63, 392.00, 440.00, 392.00, 329.63, 293.66, 392.00,
+                       329.63, 392.00, 523.25, 392.00, 440.00, 392.00, 329.63, 261.63];
+
+        this.bgmTimer = setInterval(() => {
+          if (!this.isBgmActive || !this.ctx || this.ctx.state !== 'running') return;
+
+          const freq = scale[this.bgmStep % scale.length];
+          this.bgmStep++;
+
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now);
+
+          // 輕柔短促的木琴音量
+          gain.gain.setValueAtTime(0.035, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now);
+          osc.stop(now + 0.24);
+        }, 260);
+      }
+
+      toggleBgm() {
+        this.isBgmActive = !this.isBgmActive;
+        return this.isBgmActive;
+      }
+    }
+
+    /* --------------------------------------------------------
+       食物圖案定義 (超大 SVG 規格，清晰童趣)
+       -------------------------------------------------------- */
+    const FOOD_TEMPLATES = {
+      cake: `
+        <svg viewBox="0 0 160 120" class="w-32 h-24 md:w-44 md:h-32 drop-shadow-lg">
+          <!-- 盤子底座 -->
+          <ellipse cx="80" cy="110" rx="72" ry="9" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/>
+          <!-- 蛋糕底層 -->
+          <path d="M 24 70 C 24 60, 136 60, 136 70 L 136 100 C 136 110, 24 110, 24 100 Z" fill="#fed7aa" stroke="#c2410c" stroke-width="2"/>
+          <path d="M 24 85 C 24 95, 136 95, 136 85" stroke="#ec4899" stroke-width="4" stroke-dasharray="8 6" fill="none"/>
+          <!-- 蛋糕上層奶油層 -->
+          <path d="M 36 45 C 36 36, 124 36, 124 45 L 124 70 C 124 78, 36 78, 36 70 Z" fill="#fdf2f8" stroke="#fb7185" stroke-width="2"/>
+          <!-- 奶油淋醬垂滴 -->
+          <path d="M 36 48 Q 48 62 60 48 Q 72 65 84 48 Q 96 65 108 48 Q 116 60 124 48" fill="#fda4af" stroke="#f43f5e" stroke-width="2"/>
+          <!-- 大草莓裝飾頂部 -->
+          <path d="M 72 24 C 68 8, 92 8, 88 24 C 86 32, 74 32, 72 24 Z" fill="#e11d48"/>
+          <!-- 草莓蒂頭 -->
+          <polygon points="76,14 80,18 84,14 80,10" fill="#22c55e"/>
+          <circle cx="76" cy="22" r="1.2" fill="#fff"/>
+          <circle cx="82" cy="20" r="1.2" fill="#fff"/>
+          <circle cx="80" cy="26" r="1.2" fill="#fff"/>
+        </svg>
+      `,
+      candy: `
+        <svg viewBox="0 0 160 120" class="w-32 h-24 md:w-44 md:h-32 drop-shadow-lg -rotate-12">
+          <!-- 棒子 -->
+          <rect x="74" y="55" width="12" height="60" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+          <!-- 棒棒糖圓糖體 -->
+          <circle cx="80" cy="48" r="38" fill="#ec4899" stroke="#be185d" stroke-width="3"/>
+          <!-- 七彩漩渦螺旋紋 -->
+          <path d="M 80 48 M 80 20 A 28 28 0 0 1 108 48 A 20 20 0 0 1 88 68 A 12 12 0 0 1 76 56" fill="none" stroke="#fef08a" stroke-width="6" stroke-linecap="round"/>
+          <path d="M 80 48 M 80 26 A 22 22 0 0 1 102 48 A 15 15 0 0 1 87 63" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round"/>
+          <!-- 糖果反光高光 -->
+          <path d="M 60 30 Q 75 20 95 24" stroke="#ffffff" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.8"/>
+          <!-- 可愛蝴蝶結 -->
+          <path d="M 68 80 L 80 86 L 92 80 L 86 92 L 80 88 L 74 92 Z" fill="#a855f7" stroke="#7e22ce" stroke-width="2"/>
+        </svg>
+      `
+    };
+
+    /* --------------------------------------------------------
+       遊戲狀態管理
+       -------------------------------------------------------- */
+    const state = {
+      dwellThreshold: 0.5,      // 凝視觸發門檻秒數 (0.2s - 1.0s)
+      targetCount: 5,           // 目標搬運總隻數
+      completedCount: 0,        // 已搬完隻數
+      currentFood: 'cake',      // 當前食物 ('cake' 或 'candy')
+      
+      // 運作中狀態
+      isGazing: false,          // 游標是否停在螞蟻上
+      gazeTime: 0,              // 當前連續凝視秒數累計
+      antX: 40,                 // 螞蟻水平位置 px
+      walkSpeed: 190,           // 螞蟻前進速度 (px/秒)
+      isWalking: false,         // 是否正在向右爬行
+      isLevelComplete: false,   // 是否本局結束
+      lastTimestamp: 0,
+      stepAudioCounter: 0,
+    };
+
+    // DOM 元素引用
+    const antWalker = document.getElementById('ant-walker');
+    const foodContainer = document.getElementById('food-container');
+    const gazeIndicatorWrap = document.getElementById('gaze-indicator-wrap');
+    const gazeCircleProgress = document.getElementById('gaze-circle-progress');
+    const legsBack = document.getElementById('legs-back');
+    const legsMid = document.getElementById('legs-mid');
+    const legsFront = document.getElementById('legs-front');
+    const caveStorage = document.getElementById('cave-storage');
+    const gameStage = document.getElementById('game-stage');
+
+    const dwellSlider = document.getElementById('dwell-slider');
+    const dwellValue = document.getElementById('dwell-value');
+    const targetCountSelect = document.getElementById('target-count');
+    const progressText = document.getElementById('progress-text');
+    const btnFoodCake = document.getElementById('btn-food-cake');
+    const btnFoodCandy = document.getElementById('btn-food-candy');
+    const btnBgm = document.getElementById('btn-bgm');
+    const bgmIcon = document.getElementById('bgm-icon');
+    const bgmStatus = document.getElementById('bgm-status');
+    const btnReset = document.getElementById('btn-reset');
+    const btnFullscreen = document.getElementById('btn-fullscreen');
+    const audioPrompt = document.getElementById('audio-start-prompt');
+
+    const victoryModal = document.getElementById('victory-modal');
+    const victoryDesc = document.getElementById('victory-desc');
+    const victoryShelf = document.getElementById('victory-trophy-shelf');
+    const btnPlayAgain = document.getElementById('btn-play-again');
+    const confettiContainer = document.getElementById('confetti-container');
+
+    const sound = new SoundEngine();
+
+    // 圓周長 (r=52, 2 * pi * 52 ≈ 326.72)
+    const CIRCLE_CIRCUMFERENCE = 326.72;
+
+    /* --------------------------------------------------------
+       初始化與食物渲染
+       -------------------------------------------------------- */
+    function renderCurrentFood() {
+      foodContainer.innerHTML = FOOD_TEMPLATES[state.currentFood] || FOOD_TEMPLATES.cake;
+    }
+
+    function updateProgressUI() {
+      progressText.textContent = `${state.completedCount} / ${state.targetCount} 隻`;
+    }
+
+    function setWalkingAnimation(active) {
+      if (active) {
+        legsBack.classList.add('animate-leg-1');
+        legsMid.classList.add('animate-leg-2');
+        legsFront.classList.add('animate-leg-1');
+        antWalker.classList.add('animate-walking');
+      } else {
+        legsBack.classList.remove('animate-leg-1');
+        legsMid.classList.remove('animate-leg-2');
+        legsFront.classList.remove('animate-leg-1');
+        antWalker.classList.remove('animate-walking');
+      }
+    }
+
+    function resetCurrentAntPosition() {
+      // 起點位置 (避開邊緣草叢)
+      state.antX = 50;
+      antWalker.style.left = `${state.antX}px`;
+      state.gazeTime = 0;
+      state.isWalking = false;
+      updateGazeProgressUI(0);
+      setWalkingAnimation(false);
+      renderCurrentFood();
+    }
+
+    /* --------------------------------------------------------
+       眼動游標懸停 (Hover / Gaze) 事件監聽
+       相容眼動儀模擬滑鼠移動、一般滑鼠、以及觸控螢幕
+       -------------------------------------------------------- */
+    function onGazeEnter() {
+      sound.init();
+      sound.startBgmLoop();
+      if (audioPrompt) audioPrompt.style.opacity = '0';
+      if (state.isLevelComplete) return;
+
+      state.isGazing = true;
+      antWalker.classList.add('is-gazing');
+      gazeIndicatorWrap.style.opacity = '1';
+    }
+
+    function onGazeLeave() {
+      if (state.isLevelComplete) return;
+
+      state.isGazing = false;
+      state.gazeTime = 0; // 眼球飄走，凝視計時重置，螞蟻停在原地
+      state.isWalking = false;
+      antWalker.classList.remove('is-gazing');
+      gazeIndicatorWrap.style.opacity = '0';
+      updateGazeProgressUI(0);
+      setWalkingAnimation(false);
+    }
+
+    antWalker.addEventListener('mouseenter', onGazeEnter);
+    antWalker.addEventListener('mouseleave', onGazeLeave);
+
+    // 觸控螢幕支援
+    antWalker.addEventListener('touchstart', (e) => {
+      onGazeEnter();
+    }, { passive: true });
+    
+    window.addEventListener('touchend', (e) => {
+      if (!antWalker.contains(e.target)) {
+        onGazeLeave();
+      }
+    });
+
+    // 點擊任意處啟動 AudioContext
+    window.addEventListener('pointerdown', () => {
+      sound.init();
+      sound.startBgmLoop();
+      if (audioPrompt) {
+        audioPrompt.style.opacity = '0';
+        setTimeout(() => audioPrompt.remove(), 400);
+      }
+    }, { once: true });
+
+    /* --------------------------------------------------------
+       凝視進度環更新
+       -------------------------------------------------------- */
+    function updateGazeProgressUI(ratio) {
+      const clamped = Math.max(0, Math.min(1, ratio));
+      const offset = CIRCLE_CIRCUMFERENCE * (1 - clamped);
+      gazeCircleProgress.style.strokeDashoffset = offset;
+    }
+
+    /* --------------------------------------------------------
+       遊戲主迴圈 (RequestAnimationFrame)
+       -------------------------------------------------------- */
+    function gameLoop(timestamp) {
+      if (!state.lastTimestamp) state.lastTimestamp = timestamp;
+      const dt = Math.min((timestamp - state.lastTimestamp) / 1000, 0.1); // 秒為單位
+      state.lastTimestamp = timestamp;
+
+      if (!state.isLevelComplete) {
+        if (state.isGazing) {
+          // 累積凝視時間
+          state.gazeTime += dt;
+          const ratio = state.gazeTime / state.dwellThreshold;
+          updateGazeProgressUI(ratio);
+
+          // 播放提示進度微音
+          sound.playGazeTick(Math.min(ratio, 1.0));
+
+          // 達到老師設定的門檻秒數後，開始前進！
+          if (state.gazeTime >= state.dwellThreshold) {
+            if (!state.isWalking) {
+              state.isWalking = true;
+              setWalkingAnimation(true);
+            }
+
+            // 螞蟻向右爬行
+            state.antX += state.walkSpeed * dt;
+            antWalker.style.left = `${state.antX}px`;
+
+            // 腳步聲循環
+            state.stepAudioCounter += dt;
+            if (state.stepAudioCounter > 0.28) {
+              sound.playStepSound();
+              state.stepAudioCounter = 0;
+            }
+
+            // 偵測是否抵達右側樹洞/糧倉
+            checkArrival();
+          }
+        }
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    /* --------------------------------------------------------
+       抵達檢查與單隻完成處理
+       -------------------------------------------------------- */
+    function checkArrival() {
+      const stageWidth = gameStage.clientWidth;
+      // 螞蟻水平走進朝左開口的蟻穴隧道深度
+      const targetArrivalX = stageWidth - 230;
+
+      if (state.antX >= targetArrivalX) {
+        // 本隻搬運完成！
+        onAntReachedCave();
+      }
+    }
+
+    function onAntReachedCave() {
+      state.isWalking = false;
+      state.isGazing = false;
+      setWalkingAnimation(false);
+      sound.playAntArrival();
+
+      // 在樹洞內加入特大食物
+      addFoodToCave(state.currentFood);
+
+      state.completedCount++;
+      updateProgressUI();
+
+      // 檢查是否全部完成
+      if (state.completedCount >= state.targetCount) {
+        showVictoryScreen();
+      } else {
+        // 重置螞蟻回起點，繼續下一隻
+        resetCurrentAntPosition();
+      }
+    }
+
+    // 將搬好的食物加入洞穴儲存區展示（特大尺寸且帶有進入動畫）
+    function addFoodToCave(type) {
+      const foodWrapper = document.createElement('div');
+      foodWrapper.className = 'w-16 h-14 md:w-20 md:h-16 flex items-center justify-center transform scale-90 transition-all duration-300 drop-shadow-md';
+      foodWrapper.innerHTML = FOOD_TEMPLATES[type] || FOOD_TEMPLATES.cake;
+      caveStorage.appendChild(foodWrapper);
+    }
+
+    /* --------------------------------------------------------
+       通關慶祝與彩帶特效
+       -------------------------------------------------------- */
+    function showVictoryScreen() {
+      state.isLevelComplete = true;
+      sound.playGameComplete();
+
+      // 準備戰利品列表
+      victoryShelf.innerHTML = '';
+      const icon = state.currentFood === 'cake' ? '🍰' : '🍭';
+      for (let i = 0; i < state.completedCount; i++) {
+        const item = document.createElement('span');
+        item.className = 'text-3xl md:text-4xl animate-pulse';
+        item.textContent = icon;
+        victoryShelf.appendChild(item);
+      }
+
+      victoryDesc.textContent = `太厲害了！你幫忙搬完了所有 ${state.targetCount} 個大食物！`;
+      victoryModal.classList.remove('hidden');
+
+      // 啟動彩帶灑花
+      spawnConfetti(60);
+    }
+
+    function spawnConfetti(count) {
+      const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#facc15'];
+      for (let i = 0; i < count; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = `${Math.random() * 100}vw`;
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.width = `${10 + Math.random() * 12}px`;
+        confetti.style.height = `${8 + Math.random() * 14}px`;
+        confetti.style.animationDelay = `${Math.random() * 1.5}s`;
+        confetti.style.animationDuration = `${2.5 + Math.random() * 2}s`;
+        confettiContainer.appendChild(confetti);
+
+        // 動畫結束後移除
+        setTimeout(() => confetti.remove(), 5000);
+      }
+    }
+
+    /* --------------------------------------------------------
+       教師控制列互動監聽
+       -------------------------------------------------------- */
+    // 凝視秒數滑桿 (0.2 - 1.0s)
+    dwellSlider.addEventListener('input', (e) => {
+      const val = parseFloat(e.target.value);
+      state.dwellThreshold = val;
+      dwellValue.textContent = `${val.toFixed(1)}s`;
+    });
+
+    // 目標總隻數更動
+    targetCountSelect.addEventListener('change', (e) => {
+      state.targetCount = parseInt(e.target.value, 10);
+      updateProgressUI();
+    });
+
+    // 食物切換：蛋糕
+    btnFoodCake.addEventListener('click', () => {
+      state.currentFood = 'cake';
+      btnFoodCake.className = 'px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold transition flex items-center gap-1 bg-yellow-500 text-amber-950 shadow';
+      btnFoodCandy.className = 'px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold transition flex items-center gap-1 bg-amber-800/80 text-amber-200 hover:bg-amber-700';
+      renderCurrentFood();
+    });
+
+    // 食物切換：棒棒糖
+    btnFoodCandy.addEventListener('click', () => {
+      state.currentFood = 'candy';
+      btnFoodCandy.className = 'px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold transition flex items-center gap-1 bg-yellow-500 text-amber-950 shadow';
+      btnFoodCake.className = 'px-2.5 py-1 rounded-lg text-xs md:text-sm font-bold transition flex items-center gap-1 bg-amber-800/80 text-amber-200 hover:bg-amber-700';
+      renderCurrentFood();
+    });
+
+    // BGM 開關切換
+    btnBgm.addEventListener('click', () => {
+      sound.init();
+      const isOn = sound.toggleBgm();
+      if (isOn) {
+        bgmIcon.textContent = '🎵';
+        bgmStatus.textContent = '音樂:開';
+        btnBgm.className = 'px-2.5 py-1 rounded-lg bg-amber-800 hover:bg-amber-700 text-xs md:text-sm font-bold flex items-center gap-1 transition';
+      } else {
+        bgmIcon.textContent = '🔇';
+        bgmStatus.textContent = '音樂:關';
+        btnBgm.className = 'px-2.5 py-1 rounded-lg bg-stone-700 hover:bg-stone-600 text-stone-300 text-xs md:text-sm font-bold flex items-center gap-1 transition';
+      }
+    });
+
+    // 重置本局
+    function restartGame() {
+      state.completedCount = 0;
+      state.isLevelComplete = false;
+      caveStorage.innerHTML = '';
+      confettiContainer.innerHTML = '';
+      victoryModal.classList.add('hidden');
+      updateProgressUI();
+      resetCurrentAntPosition();
+    }
+
+    btnReset.addEventListener('click', restartGame);
+    btnPlayAgain.addEventListener('click', restartGame);
+
+    // 全螢幕切換
+    btnFullscreen.addEventListener('click', () => {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    });
+
+    // 視窗調整重繪位置防破版
+    window.addEventListener('resize', () => {
+      if (!state.isWalking && state.antX > gameStage.clientWidth - 200) {
+        state.antX = 50;
+        antWalker.style.left = `${state.antX}px`;
+      }
+    });
+
+    /* --------------------------------------------------------
+       啟動小遊戲
+       -------------------------------------------------------- */
+    window.onload = function() {
+      renderCurrentFood();
+      updateProgressUI();
+      resetCurrentAntPosition();
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
+</body>
+</html>

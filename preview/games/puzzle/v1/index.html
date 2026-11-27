@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>眼控友善磁吸拼圖遊戲</title>
+    <style>
+        * { box-sizing: border-box; }
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        #controls {
+            height: 60px;
+            width: 100%;
+            background: #2b2b3d;
+            padding: 0 15px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            justify-content: flex-start;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+        }
+        select, button, input {
+            padding: 6px 12px;
+            font-size: 16px;
+            border-radius: 6px;
+            border: 1px solid #555;
+            background: #3b3b4f;
+            color: #fff;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        input[type="color"] {
+            padding: 1px 2px;
+            width: 45px;
+            height: 36px;
+            vertical-align: middle;
+        }
+        label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 15px;
+            white-space: nowrap;
+        }
+        button {
+            background-color: #28a745;
+            font-weight: bold;
+        }
+        button:hover { background-color: #218838; }
+        #fullscreen-btn { background-color: #007bff; }
+        #fullscreen-btn:hover { background-color: #0069d9; }
+
+        #game-wrapper {
+            position: relative;
+            width: 100vw;
+            height: calc(100vh - 60px);
+            background-color: #252538;
+            display: flex;
+            justify-content: space-between;
+            overflow: hidden;
+            transition: background-color 0.3s ease;
+        }
+
+        #game-wrapper:-webkit-full-screen { height: 100vh; }
+        #game-wrapper:fullscreen { height: 100vh; }
+
+        .dock {
+            width: 22%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-right: 3px dashed rgba(255,255,255,0.2);
+            position: relative;
+            z-index: 5;
+        }
+        #dock-right {
+            border-right: none;
+            border-left: 3px dashed rgba(255,255,255,0.2);
+        }
+
+        #board-container {
+            position: relative;
+            flex-grow: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: transparent;
+        }
+
+        #board {
+            position: relative;
+            box-shadow: 0 0 25px rgba(0,0,0,0.5);
+            background-color: #ffffff;
+            border: 4px solid #ffffff;
+            border-radius: 4px;
+        }
+
+        #board-bg {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0.55;
+            background-size: 100% 100%;
+            transition: opacity 0.2s ease;
+        }
+
+        #grid-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            display: grid;
+            pointer-events: none;
+        }
+        .grid-cell {
+            border: 2px dashed rgba(0, 0, 0, 0.5);
+        }
+
+        .piece {
+            position: absolute;
+            cursor: pointer;
+            background-repeat: no-repeat;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            border: 3px solid rgba(255,255,255,0.9);
+            transform-origin: center center;
+            transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+            z-index: 10;
+        }
+        .piece.hovered {
+            border-color: #00ffcc !important;
+            box-shadow: 0 0 22px #00ffcc !important;
+            z-index: 50 !important;
+        }
+        .piece.attached {
+            border-color: #ffcc00 !important;
+            box-shadow: 0 0 25px #ffcc00 !important;
+            transform: scale(1.05) !important;
+            z-index: 100 !important;
+        }
+        .piece.locked {
+            cursor: default;
+            pointer-events: none;
+            transform: scale(1) !important;
+            box-shadow: none !important;
+            border: none !important;
+            z-index: 1 !important;
+        }
+
+        #canvas-confetti {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="controls">
+        <button id="fullscreen-btn">🖥️ 全螢幕切換</button>
+        <label>背景色: <input type="color" id="bg-color-picker" value="#252538"></label>
+        <label>底圖提示: 
+            <select id="hint-opacity">
+                <option value="0.55" selected>清晰 (55%)</option>
+                <option value="0.75">顯眼 (75%)</option>
+                <option value="0.35">微弱 (35%)</option>
+                <option value="0">隱藏 (0%)</option>
+            </select>
+        </label>
+        <label>圖片: <input type="file" id="image-upload" accept="image/*"></label>
+        <label>片數: 
+            <select id="piece-count">
+                <option value="1,2">2片 (1x2)</option>
+                <option value="2,2">4片 (2x2)</option>
+                <option value="2,3">6片 (2x3)</option>
+                <option value="3,3" selected>9片 (3x3)</option>
+                <option value="3,4">12片 (3x4)</option>
+                <option value="4,4">16片 (4x4)</option>
+            </select>
+        </label>
+        <button id="start-btn">重新開始</button>
+    </div>
+
+    <div id="game-wrapper">
+        <div id="dock-left" class="dock"></div>
+        <div id="board-container">
+            <div id="board">
+                <div id="board-bg"></div>
+                <div id="grid-overlay"></div>
+            </div>
+        </div>
+        <div id="dock-right" class="dock"></div>
+        <canvas id="canvas-confetti"></canvas>
+    </div>
+
+    <script>
+        const gameWrapper = document.getElementById('game-wrapper');
+        const board = document.getElementById('board');
+        const boardBg = document.getElementById('board-bg');
+        const gridOverlay = document.getElementById('grid-overlay');
+        const startBtn = document.getElementById('start-btn');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const bgColorPicker = document.getElementById('bg-color-picker');
+        const hintOpacitySelect = document.getElementById('hint-opacity');
+        const imageUpload = document.getElementById('image-upload');
+        const pieceCountSelect = document.getElementById('piece-count');
+        const canvasConfetti = document.getElementById('canvas-confetti');
+
+        let currentImageUrl = 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?q=80&w=600&auto=format&fit=crop';
+        let imgWidth = 0, imgHeight = 0;
+        let lockedCount = 0, totalPieces = 0;
+        let rows = 3, cols = 3;
+        
+        // 加大眼控吸附與抓取距離判定
+        const SNAP_RADIUS = 110; 
+        const PICKUP_RADIUS = 130; 
+
+        let attachedPiece = null;
+
+        bgColorPicker.addEventListener('input', (e) => {
+            gameWrapper.style.backgroundColor = e.target.value;
+        });
+
+        hintOpacitySelect.addEventListener('change', (e) => {
+            boardBg.style.opacity = e.target.value;
+        });
+
+        fullscreenBtn.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                gameWrapper.requestFullscreen().catch(err => alert("無法開啟全螢幕"));
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            setTimeout(() => { startGame(); }, 100);
+        });
+        document.addEventListener('fullscreenchange', () => {
+            setTimeout(() => { startGame(); }, 150);
+        });
+
+        // Web Audio API
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSuccessSound() {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+        }
+
+        function playErrorSound() {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(160, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+        }
+
+        function playVictorySound() {
+            initAudio();
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.12);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime + idx * 0.12);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.12 + 0.4);
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + idx * 0.12);
+                osc.stop(audioCtx.currentTime + idx * 0.12 + 0.4);
+            });
+        }
+
+        imageUpload.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = e => { currentImageUrl = e.target.result; startGame(); };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        startBtn.addEventListener('click', () => { initAudio(); startGame(); });
+
+        function startGame() {
+            attachedPiece = null;
+            document.querySelectorAll('.piece').forEach(p => p.remove());
+            const ctx = canvasConfetti.getContext('2d');
+            ctx.clearRect(0, 0, canvasConfetti.width, canvasConfetti.height);
+
+            const gridConfig = pieceCountSelect.value.split(',').map(Number);
+            rows = gridConfig[0];
+            cols = gridConfig[1];
+            totalPieces = rows * cols;
+            lockedCount = 0;
+
+            const img = new Image();
+            img.src = currentImageUrl;
+            img.onload = () => {
+                const containerW = gameWrapper.clientWidth * 0.50;
+                const containerH = gameWrapper.clientHeight * 0.85;
+                const ratio = Math.min(containerW / img.width, containerH / img.height);
+                imgWidth = Math.floor(img.width * ratio);
+                imgHeight = Math.floor(img.height * ratio);
+
+                board.style.width = imgWidth + 'px';
+                board.style.height = imgHeight + 'px';
+                boardBg.style.backgroundImage = `url(${currentImageUrl})`;
+                boardBg.style.opacity = hintOpacitySelect.value;
+
+                gridOverlay.innerHTML = '';
+                gridOverlay.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+                gridOverlay.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+                for (let i = 0; i < totalPieces; i++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('grid-cell');
+                    gridOverlay.appendChild(cell);
+                }
+
+                createPieces();
+            };
+        }
+
+        function createPieces() {
+            const pieceW = imgWidth / cols;
+            const pieceH = imgHeight / rows;
+
+            let piecesList = [];
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const piece = document.createElement('div');
+                    piece.classList.add('piece');
+                    piece.style.width = pieceW + 'px';
+                    piece.style.height = pieceH + 'px';
+                    piece.style.backgroundImage = `url(${currentImageUrl})`;
+                    piece.style.backgroundSize = `${imgWidth}px ${imgHeight}px`;
+                    piece.style.backgroundPosition = `-${c * pieceW}px -${r * pieceH}px`;
+
+                    piece.dataset.row = r;
+                    piece.dataset.col = c;
+
+                    piecesList.push(piece);
+                }
+            }
+
+            piecesList.sort(() => Math.random() - 0.5);
+
+            const leftPieces = [];
+            const rightPieces = [];
+            piecesList.forEach((piece, index) => {
+                if (index % 2 === 0) leftPieces.push(piece);
+                else rightPieces.push(piece);
+            });
+
+            function arrangeDock(pieces, isLeft) {
+                const count = pieces.length;
+                if (count === 0) return;
+
+                const dockEl = isLeft ? document.getElementById('dock-left') : document.getElementById('dock-right');
+                const dockRect = dockEl.getBoundingClientRect();
+                const wrapperRect = gameWrapper.getBoundingClientRect();
+
+                // 9片模式下強制左右皆採用單欄(1欄)直列，其餘片數維持自動縮放
+                let dockCols = (totalPieces === 9) ? 1 : ((count > 4) ? 2 : 1);
+                let dockRows = Math.ceil(count / dockCols);
+
+                const paddingX = 16;
+                const paddingY = 20;
+                const availW = dockRect.width - paddingX * 2;
+                const availH = dockRect.height - paddingY * 2;
+
+                const slotW = availW / dockCols;
+                const slotH = availH / dockRows;
+
+                const scaleW = slotW / pieceW;
+                const scaleH = slotH / pieceH;
+                const scaleFactor = Math.min(scaleW, scaleH) * 0.92;
+
+                const baseLeft = (dockRect.left - wrapperRect.left) + paddingX;
+                const baseTop = (dockRect.top - wrapperRect.top) + paddingY;
+
+                pieces.forEach((piece, idx) => {
+                    const colIdx = idx % dockCols;
+                    const rowIdx = Math.floor(idx / dockCols);
+
+                    const slotCenterX = baseLeft + colIdx * slotW + slotW / 2;
+                    const slotCenterY = baseTop + rowIdx * slotH + slotH / 2;
+
+                    const pieceLeft = slotCenterX - pieceW / 2;
+                    const pieceTop = slotCenterY - pieceH / 2;
+
+                    piece.dataset.scale = scaleFactor;
+                    piece.style.left = pieceLeft + 'px';
+                    piece.style.top = pieceTop + 'px';
+                    piece.style.transform = `scale(${scaleFactor})`;
+
+                    gameWrapper.appendChild(piece);
+                });
+            }
+
+            arrangeDock(leftPieces, true);
+            arrangeDock(rightPieces, false);
+        }
+
+        function getTargetPosition(piece) {
+            const r = parseInt(piece.dataset.row);
+            const c = parseInt(piece.dataset.col);
+            const pieceW = imgWidth / cols;
+            const pieceH = imgHeight / rows;
+
+            const boardRect = board.getBoundingClientRect();
+            const wrapperRect = gameWrapper.getBoundingClientRect();
+
+            const targetX = (boardRect.left - wrapperRect.left) + c * pieceW;
+            const targetY = (boardRect.top - wrapperRect.top) + r * pieceH;
+
+            return { targetX, targetY };
+        }
+
+        // 視線移動監聽：負責游標跟隨、自動靠近吸附、視覺發光提示
+        gameWrapper.addEventListener('mousemove', (e) => {
+            const wrapperRect = gameWrapper.getBoundingClientRect();
+            const mouseX = e.clientX - wrapperRect.left;
+            const mouseY = e.clientY - wrapperRect.top;
+
+            // 狀態 1：手上已有拼圖 -> 拼圖跟隨游標 + 靠近自動吸附
+            if (attachedPiece) {
+                const pieceW = parseFloat(attachedPiece.style.width);
+                const pieceH = parseFloat(attachedPiece.style.height);
+                attachedPiece.style.left = (mouseX - pieceW / 2) + 'px';
+                attachedPiece.style.top = (mouseY - pieceH / 2) + 'px';
+
+                // 【自動靠近吸附放回機制】
+                const { targetX, targetY } = getTargetPosition(attachedPiece);
+                const currentX = parseFloat(attachedPiece.style.left);
+                const currentY = parseFloat(attachedPiece.style.top);
+                const dist = Math.hypot(currentX - targetX, currentY - targetY);
+
+                if (dist < SNAP_RADIUS) {
+                    attachedPiece.style.left = targetX + 'px';
+                    attachedPiece.style.top = targetY + 'px';
+                    attachedPiece.classList.remove('attached', 'hovered');
+                    attachedPiece.classList.add('locked');
+                    attachedPiece.style.transform = 'scale(1)';
+                    playSuccessSound();
+
+                    lockedCount++;
+                    attachedPiece = null;
+
+                    if (lockedCount === totalPieces) {
+                        setTimeout(() => {
+                            playVictorySound();
+                            triggerConfetti();
+                        }, 200);
+                    }
+                }
+                return;
+            }
+
+            // 狀態 2：手上沒拼圖 -> 尋找距離視線最近的側邊拼圖並高亮提示
+            let closestPiece = null;
+            let minDist = Infinity;
+
+            document.querySelectorAll('.piece:not(.locked):not(.attached)').forEach(piece => {
+                const baseScale = parseFloat(piece.dataset.scale) || 1;
+                piece.classList.remove('hovered');
+                piece.style.transform = `scale(${baseScale})`;
+
+                const pX = parseFloat(piece.style.left) + parseFloat(piece.style.width) / 2;
+                const pY = parseFloat(piece.style.top) + parseFloat(piece.style.height) / 2;
+                const dist = Math.hypot(mouseX - pX, mouseY - pY);
+
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestPiece = piece;
+                }
+            });
+
+            if (closestPiece && minDist < PICKUP_RADIUS) {
+                closestPiece.classList.add('hovered');
+                const baseScale = parseFloat(closestPiece.dataset.scale) || 1;
+                closestPiece.style.transform = `scale(${baseScale * 1.15})`;
+            }
+        });
+
+        // 點擊事件：負責單鍵抓取
+        gameWrapper.addEventListener('click', (e) => {
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+            initAudio();
+            const wrapperRect = gameWrapper.getBoundingClientRect();
+            const mouseX = e.clientX - wrapperRect.left;
+            const mouseY = e.clientY - wrapperRect.top;
+
+            // 如果手上已有拼圖，但尚未到達自動吸附距離 -> 播放音效提示，拼圖「不掉落」繼續跟隨
+            if (attachedPiece) {
+                playErrorSound();
+                return;
+            }
+
+            // 尋找視線目標區域內最近的拼圖並抓起
+            let closestPiece = null;
+            let minDist = Infinity;
+
+            document.querySelectorAll('.piece:not(.locked)').forEach(piece => {
+                const pX = parseFloat(piece.style.left) + parseFloat(piece.style.width) / 2;
+                const pY = parseFloat(piece.style.top) + parseFloat(piece.style.height) / 2;
+                const dist = Math.hypot(mouseX - pX, mouseY - pY);
+
+                if (dist < minDist) {
+                    minDist = dist;
+                    closestPiece = piece;
+                }
+            });
+
+            if (closestPiece && minDist < PICKUP_RADIUS) {
+                attachedPiece = closestPiece;
+                attachedPiece.classList.remove('hovered');
+                attachedPiece.classList.add('attached');
+                attachedPiece.style.transform = 'scale(1.05)';
+
+                const pieceW = parseFloat(attachedPiece.style.width);
+                const pieceH = parseFloat(attachedPiece.style.height);
+                attachedPiece.style.left = (mouseX - pieceW / 2) + 'px';
+                attachedPiece.style.top = (mouseY - pieceH / 2) + 'px';
+            }
+        });
+
+        function triggerConfetti() {
+            canvasConfetti.width = gameWrapper.clientWidth;
+            canvasConfetti.height = gameWrapper.clientHeight;
+            const ctx = canvasConfetti.getContext('2d');
+            const particles = Array.from({ length: 100 }).map(() => ({
+                x: canvasConfetti.width / 2,
+                y: canvasConfetti.height / 2,
+                vx: (Math.random() - 0.5) * 16,
+                vy: (Math.random() - 0.5) * 16 - 4,
+                color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+                size: Math.random() * 8 + 4
+            }));
+
+            let frame = 0;
+            function animate() {
+                ctx.clearRect(0, 0, canvasConfetti.width, canvasConfetti.height);
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.25;
+                    ctx.fillStyle = p.color;
+                    ctx.fillRect(p.x, p.y, p.size, p.size);
+                });
+                if (++frame < 100) requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        window.onload = startGame;
+    </script>
+</body>
+</html>

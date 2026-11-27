@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=loops&utm_source=ai-legible&utm_medium=owned&utm_content=comment&utm_id=dd48e937-b2f8-4de1-8d7b-2ae4dad531a1
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>洗車遊戲 v2</title>
+<style>
+:root{
+  --sky:#aee4ff; --sky2:#e8f9ff; --ground:#8fd177; --road:#6b7280;
+  --sun:#ffd23f; --ink:#1e2a38; --card:#ffffff;
+  --accent:#ff7a45; --accent2:#2aa7e0; --foam:#f3fbff;
+  --dirt:#8a5a33; --dirt2:#6e4626;
+  --car-x:50%; --car-w:560px;
+  --r-lg:28px; --r-md:18px;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+html,body{height:100%; margin:0;}
+body{
+  font-family:"jf-openhuninn","Yuanti TC","PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;
+  color:var(--ink); background:var(--sky2); overflow:hidden;
+}
+
+/* ---------- Header ---------- */
+header{
+  position:fixed; top:0; left:0; right:0; z-index:60;
+  display:flex; align-items:center; gap:10px;
+  padding:10px 14px;
+  background:rgba(255,255,255,.85); backdrop-filter:blur(8px);
+  border-bottom:3px solid rgba(30,42,56,.08);
+}
+header h1{font-size:20px; margin:0; letter-spacing:2px; font-weight:900;}
+header .lvl{
+  margin-left:6px; font-size:13px; font-weight:800; color:#fff;
+  background:var(--accent2); padding:4px 12px; border-radius:999px;
+}
+header .spacer{flex:1;}
+.iconbtn{
+  width:46px; height:46px; border-radius:16px; border:3px solid var(--ink);
+  background:#fff; font-size:20px; cursor:pointer;
+  box-shadow:0 3px 0 var(--ink); transition:transform .08s;
+}
+.iconbtn:active{transform:translateY(3px); box-shadow:none;}
+
+/* ---------- Stage ---------- */
+#stage{position:fixed; inset:0; padding-top:66px; overflow:hidden;}
+#bg{position:absolute; inset:0; z-index:0; transition:background .4s;}
+#bg.simple{background:linear-gradient(#dff4ff 0 72%, #cfe9c4 72% 100%);}
+#bg.rich{background:linear-gradient(var(--sky) 0 60%, #bfe6ae 60% 74%, var(--road) 74% 100%);}
+#bg.contrast{background:linear-gradient(#12161c 0 74%, #2b3340 74% 100%);}
+#bg.photo{background-size:cover !important; background-position:center !important; background-repeat:no-repeat !important;}
+#bg .deco{position:absolute; transition:opacity .4s; opacity:0;}
+#bg.rich .deco{opacity:1;}
+.sun{top:6%; right:8%; width:90px; height:90px; border-radius:50%;
+  background:var(--sun); box-shadow:0 0 0 14px rgba(255,210,63,.35), 0 0 60px rgba(255,210,63,.8);}
+.cloud{background:#fff; border-radius:999px; height:34px; width:110px; top:12%; left:14%;
+  box-shadow:30px -14px 0 6px #fff, 62px 0 0 -2px #fff; opacity:.95;}
+.cloud.c2{left:58%; top:20%; transform:scale(.8);}
+.tree{bottom:24%; width:0;}
+.tree::before{content:""; position:absolute; bottom:0; left:-7px; width:14px; height:44px; background:#8a5a33; border-radius:4px;}
+.tree::after{content:""; position:absolute; bottom:32px; left:-34px; width:68px; height:68px; background:#4f9e4f; border-radius:50%;
+  box-shadow:-22px 16px 0 -8px #57ac57, 22px 16px 0 -8px #57ac57;}
+.tree.t1{left:8%;}.tree.t2{left:86%;}
+.shop{bottom:26%; left:36%; width:230px; height:120px; background:#ffd9a0; border:4px solid #d8a25e; border-radius:12px;}
+.shop::before{content:"🧼 洗車場"; position:absolute; top:-34px; left:50%; transform:translateX(-50%);
+  background:#ff7a45; color:#fff; font-weight:900; padding:4px 16px; border-radius:10px; font-size:16px; white-space:nowrap;}
+.shop::after{content:""; position:absolute; inset:16px 20px; background:repeating-linear-gradient(90deg,#9adcf5 0 24px,#bde9ff 24px 48px); border-radius:8px;}
+#bg.contrast .ground-line{position:absolute; left:0; right:0; top:74%; height:6px; background:#ffe24a; opacity:1;}
+
+/* ---------- Car ---------- */
+#carWrap{
+  position:absolute; z-index:10; bottom:13%;
+  left:var(--car-x); transform:translateX(-50%);
+  width:var(--car-w);
+}
+#carWrap.taplevel{cursor:pointer;}
+#carSVG{width:100%; display:block; filter:drop-shadow(0 14px 10px rgba(0,0,0,.18));}
+#carImg{width:100%; display:none; filter:drop-shadow(0 14px 10px rgba(0,0,0,.18));}
+#carWrap.custom #carSVG{display:none;}
+#carWrap.custom #carImg{display:block;}
+.wiggle{animation:wiggle .5s ease;}
+@keyframes wiggle{0%,100%{rotate:0deg}25%{rotate:-1.5deg}75%{rotate:1.5deg}}
+
+/* ---------- Dirt / droplets ---------- */
+.spot{
+  position:absolute; z-index:12; cursor:pointer;
+  background:radial-gradient(circle at 35% 30%, var(--dirt), var(--dirt2));
+  border-radius:46% 54% 58% 42% / 52% 44% 56% 48%;
+  transition:transform .15s, opacity .3s, background .3s;
+}
+.spot.hintable{animation:pulse 1.4s infinite;}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
+.spot.soaked{
+  background:radial-gradient(circle at 35% 30%, #6d7f8f, #46586a);
+  box-shadow:inset 0 0 0 3px rgba(160,220,255,.6);
+}
+.spot.foam{
+  background:radial-gradient(circle at 30% 30%, #ffffff, #d8efff);
+  box-shadow:0 0 0 4px rgba(255,255,255,.7), 6px -6px 0 -2px #fff, -8px 4px 0 -3px #fff;
+  border-radius:50%;
+}
+.spot.gone{opacity:0; transform:scale(1.8); pointer-events:none;}
+.drop{
+  position:absolute; z-index:12; cursor:pointer;
+  background:linear-gradient(#9fd9ff,#3aa4e8);
+  border-radius:50% 50% 56% 44% / 68% 68% 36% 36%;
+  box-shadow:inset -3px -4px 0 rgba(255,255,255,.55);
+  transition:opacity .25s, transform .25s;
+}
+.drop::before{content:""; position:absolute; top:-38%; left:50%; transform:translateX(-50%);
+  border-left:30% solid transparent; border-right:30% solid transparent;
+  width:0; height:0; border-bottom:.5em solid #9fd9ff;}
+.drop.hintable{animation:pulse 1.4s infinite;}
+.drop.gone{opacity:0; transform:scale(.2); pointer-events:none;}
+
+/* ---------- Effects ---------- */
+.burst{position:absolute; z-index:30; pointer-events:none; font-size:26px; animation:burst .7s forwards;}
+@keyframes burst{0%{transform:scale(.4); opacity:1}100%{transform:scale(2) translateY(-30px); opacity:0}}
+.sparkle{position:absolute; z-index:30; pointer-events:none; font-size:30px; animation:spk 1.1s forwards;}
+@keyframes spk{0%{transform:scale(0) rotate(0)}55%{transform:scale(1.3) rotate(30deg)}100%{transform:scale(0) rotate(60deg); opacity:0}}
+
+/* ---- 噴水器 sprayer + water jet ---- */
+#sprayer{position:absolute; z-index:24; display:none; pointer-events:none;}
+#sprayer.show{display:block;}
+#sprayer.flip{transform:scaleX(-1);}
+#sprayer.fire{animation:recoil .26s ease-in-out infinite;}
+@keyframes recoil{0%,100%{translate:0 0}50%{translate:-10px 2px}}
+#sprayer svg{width:100%; display:block; filter:drop-shadow(0 6px 6px rgba(0,0,0,.2));}
+#jets{position:absolute; inset:0; z-index:23; pointer-events:none;}
+.jet{
+  position:absolute; width:9px; height:24px; border-radius:6px;
+  background:linear-gradient(#eaf8ff,#4fb0e8);
+  box-shadow:0 0 8px rgba(120,210,255,.9);
+  animation:jetfly var(--dur,.55s) linear forwards;
+}
+@keyframes jetfly{
+  0%{transform:translate(0,0) rotate(var(--rot,0deg)) scale(1); opacity:1}
+  85%{opacity:.9}
+  100%{transform:translate(var(--dx),var(--dy)) rotate(var(--rot,0deg)) scale(.5); opacity:0}
+}
+.splash{position:absolute; z-index:30; pointer-events:none; font-size:22px; animation:splash .5s forwards;}
+@keyframes splash{0%{transform:scale(.3); opacity:1}100%{transform:scale(1.5); opacity:0}}
+
+/* ---- 布 cloth (擦乾動畫) ---- */
+#cloth{position:absolute; z-index:26; display:none; pointer-events:none;}
+#cloth.show{display:block;}
+#cloth .c{
+  width:100%; height:100%; border-radius:18px;
+  background:repeating-linear-gradient(45deg,#ffe9a8 0 14px,#ffd05e 14px 28px);
+  border:5px solid var(--ink); box-shadow:0 6px 0 rgba(0,0,0,.15);
+  display:grid; place-items:center; font-size:clamp(18px,3.2vw,34px);
+}
+#cloth.wiping{animation:wipe .42s ease-in-out infinite;}
+@keyframes wipe{0%,100%{rotate:-10deg}50%{rotate:10deg}}
+
+/* ---------- Brush (直筒刷) ---------- */
+#brush{
+  position:absolute; z-index:25;
+  display:none; transition:left .35s ease, top .35s ease;
+  cursor:pointer;
+}
+#brush.show{display:block;}
+#brush .arm{
+  position:absolute; background:#5b6570; border-radius:6px;
+}
+#brush.vert .arm{top:-26px; left:50%; transform:translateX(-50%); width:16px; height:32px;}
+#brush.horz .arm{left:-26px; top:50%; transform:translateY(-50%); height:16px; width:32px;}
+#brush .roll{
+  position:absolute; inset:0; border-radius:999px;
+  background:repeating-linear-gradient(45deg,#2aa7e0 0 14px,#8fd6f5 14px 28px);
+  border:5px solid var(--ink); box-shadow:0 6px 0 rgba(0,0,0,.15);
+}
+#brush.spin .roll{animation:roll .35s linear infinite;}
+@keyframes roll{to{background-position:40px 40px;}}
+/* 可點選提示 */
+#brush.tappable{filter:drop-shadow(0 0 0 rgba(255,210,63,0));}
+#brush.tappable .roll{
+  animation:brushcall 1.1s ease-in-out infinite;
+  box-shadow:0 0 0 6px rgba(255,210,63,.75), 0 6px 0 rgba(0,0,0,.15);
+}
+@keyframes brushcall{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+#brushTip{
+  position:absolute; z-index:27; display:none;
+  background:var(--sun); border:4px solid var(--ink); border-radius:16px;
+  padding:6px 14px; font-size:16px; font-weight:900; white-space:nowrap;
+  box-shadow:0 4px 0 var(--ink); pointer-events:none;
+}
+#brushTip.show{display:block; animation:tipbob 1.1s ease-in-out infinite;}
+@keyframes tipbob{0%,100%{translate:0 0}50%{translate:0 -7px}}
+
+/* ---------- Banner & progress ---------- */
+#banner{
+  position:fixed; z-index:55; left:50%; transform:translateX(-50%); bottom:20px;
+  background:var(--card); border:4px solid var(--ink); border-radius:var(--r-lg);
+  padding:12px 26px; font-size:20px; font-weight:900; letter-spacing:1px;
+  box-shadow:0 5px 0 var(--ink); max-width:86vw; text-align:center;
+}
+#banner b{color:var(--accent);}
+#steps{
+  position:fixed; z-index:55; left:50%; transform:translateX(-50%); top:76px;
+  display:flex; gap:8px;
+}
+#steps span{
+  width:52px; height:52px; border-radius:16px; display:grid; place-items:center;
+  font-size:24px; background:#fff; border:3px solid rgba(30,42,56,.25); opacity:.45; transition:.3s;
+}
+#steps span.on{opacity:1; border-color:var(--ink); box-shadow:0 4px 0 var(--ink); transform:scale(1.08); background:var(--sun);}
+#steps span.done{opacity:1; background:#c9f3c9; border-color:var(--ink);}
+
+/* ---------- Overlays ---------- */
+.overlay{
+  position:fixed; inset:0; z-index:100; display:grid; place-items:center;
+  background:rgba(20,40,60,.45); backdrop-filter:blur(4px);
+}
+.panel{
+  background:var(--card); border:5px solid var(--ink); border-radius:32px;
+  box-shadow:0 8px 0 var(--ink); padding:28px 30px; width:min(680px,92vw);
+  max-height:88vh; overflow:auto;
+}
+.panel h2{margin:0 0 4px; font-size:26px; letter-spacing:2px;}
+.panel p.sub{margin:0 0 18px; color:#5b6a7a; font-weight:700;}
+.lvlgrid{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:14px;}
+.lvlcard{
+  border:4px solid var(--ink); border-radius:22px; background:#fff; cursor:pointer;
+  padding:16px 12px; text-align:center; box-shadow:0 5px 0 var(--ink); transition:transform .08s;
+}
+.lvlcard:active{transform:translateY(5px); box-shadow:none;}
+.lvlcard .n{font-size:34px; font-weight:900; color:var(--accent2);}
+.lvlcard .t{font-size:16px; font-weight:900; margin:4px 0;}
+.lvlcard .d{font-size:12.5px; color:#5b6a7a; font-weight:700; line-height:1.5;}
+.rowbtns{display:flex; gap:12px; justify-content:center; margin-top:20px; flex-wrap:wrap;}
+.bigbtn{
+  border:4px solid var(--ink); border-radius:20px; padding:12px 26px;
+  font-size:18px; font-weight:900; cursor:pointer; background:var(--sun);
+  box-shadow:0 5px 0 var(--ink); font-family:inherit; letter-spacing:1px;
+}
+.bigbtn.alt{background:#fff;}
+.bigbtn:active{transform:translateY(5px); box-shadow:none;}
+#winPanel{text-align:center;}
+#winPanel .big{font-size:56px; margin:6px 0;}
+
+/* ---------- Settings ---------- */
+#settings .grp{margin:16px 0 4px; font-size:15px; font-weight:900; color:var(--accent2);
+  border-top:3px dashed rgba(30,42,56,.12); padding-top:12px;}
+#settings .grp:first-of-type{border-top:none; padding-top:0;}
+.optrow{display:flex; flex-wrap:wrap; gap:8px; margin:8px 0; align-items:center;}
+.optrow .lab{flex-basis:100%; font-size:13.5px; font-weight:800; color:#5b6a7a;}
+.chip{
+  border:3px solid var(--ink); background:#fff; border-radius:999px;
+  padding:7px 16px; font-size:14px; font-weight:900; cursor:pointer; font-family:inherit;
+}
+.chip.sel{background:var(--accent2); color:#fff;}
+.chip.col{width:40px; height:40px; padding:0; border-radius:50%;}
+.chip.col.sel{box-shadow:0 0 0 4px var(--sun); background:inherit;}
+.upload{
+  display:inline-flex; align-items:center; gap:8px;
+  border:3px solid var(--ink); background:#fff8e0; border-radius:16px;
+  padding:9px 16px; font-size:14.5px; font-weight:900; cursor:pointer; font-family:inherit;
+}
+.upload input{display:none;}
+.thumb{
+  width:56px; height:40px; border:3px solid var(--ink); border-radius:10px;
+  background-size:cover; background-position:center; background-color:#eee; display:none;
+}
+.thumb.show{display:block;}
+input[type=range]{width:100%; accent-color:var(--accent2);}
+.rangewrap{display:flex; align-items:center; gap:10px; width:100%;}
+.rangewrap output{font-weight:900; min-width:2em; text-align:center;}
+.hidden{display:none !important;}
+.note{font-size:12.5px; color:#5b6a7a; font-weight:700; flex-basis:100%; margin-top:2px;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🚗 洗車遊戲</h1>
+  <span class="lvl" id="lvlBadge">—</span>
+  <div class="spacer"></div>
+  <button class="iconbtn" id="btnSound" title="音效">🔊</button>
+  <button class="iconbtn" id="btnSettings" title="調整">⚙️</button>
+  <button class="iconbtn" id="btnHome" title="選擇分級">🏠</button>
+</header>
+
+<div id="stage">
+  <div id="bg" class="rich">
+    <div class="deco sun"></div>
+    <div class="deco cloud"></div>
+    <div class="deco cloud c2"></div>
+    <div class="deco shop"></div>
+    <div class="deco tree t1"></div>
+    <div class="deco tree t2"></div>
+    <div class="ground-line" style="opacity:0"></div>
+  </div>
+
+  <div id="jets"></div>
+
+  <div id="carWrap">
+    <svg id="carSVG" viewBox="0 0 560 300" xmlns="http://www.w3.org/2000/svg"></svg>
+    <img id="carImg" alt="車子">
+    <div id="spotLayer" style="position:absolute; inset:0;"></div>
+  </div>
+
+  <!-- 噴水器 -->
+  <div id="sprayer">
+    <svg viewBox="0 0 140 100" xmlns="http://www.w3.org/2000/svg">
+      <rect x="10" y="30" width="76" height="26" rx="10" fill="#2aa7e0" stroke="#1e2a38" stroke-width="7"/>
+      <path d="M28 54 l0 28 q0 10 12 10 l14 0 q12 0 12 -12 l0 -26 z" fill="#1b7fae" stroke="#1e2a38" stroke-width="7"/>
+      <rect x="82" y="34" width="42" height="16" rx="7" fill="#cfd8e3" stroke="#1e2a38" stroke-width="7"/>
+      <circle cx="24" cy="43" r="6" fill="#ffd23f"/>
+    </svg>
+  </div>
+
+  <!-- 布 -->
+  <div id="cloth"><div class="c">🧻</div></div>
+
+  <!-- 直筒刷 -->
+  <div id="brush" class="vert"><div class="arm"></div><div class="roll"></div></div>
+  <div id="brushTip">👆 點我開始刷</div>
+</div>
+
+<div id="steps">
+  <span data-ph="rinse" title="沖水">💧</span>
+  <span data-ph="bubble" title="搓泡泡">🫧</span>
+  <span data-ph="brush" title="大刷子">🧽</span>
+  <span data-ph="dry" title="擦乾">✨</span>
+</div>
+
+<div id="banner">請點選畫面開始</div>
+
+<!-- Level select -->
+<div class="overlay" id="homeOverlay">
+  <div class="panel">
+    <h2>🚗 洗車遊戲</h2>
+    <p class="sub">選擇分級方式開始遊戲</p>
+    <div class="lvlgrid">
+      <div class="lvlcard" data-lvl="1">
+        <div class="n">1格</div><div class="t">點整個畫面</div>
+        <div class="d">點畫面任何地方<br>就會洗車</div>
+      </div>
+      <div class="lvlcard" data-lvl="2">
+        <div class="n">2格</div><div class="t">點車子</div>
+        <div class="d">要點到車子<br>才會洗車</div>
+      </div>
+      <div class="lvlcard" data-lvl="4">
+        <div class="n">4格</div><div class="t">點車子＋點刷子</div>
+        <div class="d">點車子沖水、泡泡、擦乾<br>點大刷子就會自己刷</div>
+      </div>
+      <div class="lvlcard" data-lvl="6">
+        <div class="n">6格</div><div class="t">點汙漬／水滴＋刷子</div>
+        <div class="d">一個一個點汙漬和水滴<br>點大刷子就會自己刷</div>
+      </div>
+    </div>
+    <div class="rowbtns">
+      <button class="bigbtn alt" id="homeSettings">⚙️ 調整設定</button>
+    </div>
+  </div>
+</div>
+
+<!-- Win -->
+<div class="overlay hidden" id="winOverlay">
+  <div class="panel" id="winPanel">
+    <div class="big">🎉✨🚗✨🎉</div>
+    <h2>車子亮晶晶！洗好了！</h2>
+    <div class="rowbtns">
+      <button class="bigbtn" id="btnAgain">🔁 再玩一次</button>
+      <button class="bigbtn alt" id="btnPick">🏠 選擇分級</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div class="overlay hidden" id="settingsOverlay">
+  <div class="panel" id="settings">
+    <h2>⚙️ 可調整</h2>
+
+    <div class="grp">車款</div>
+    <div class="optrow">
+      <button class="chip" data-set="carStyle" data-val="sedan">🚗 轎車</button>
+      <button class="chip" data-set="carStyle" data-val="suv">🚙 休旅車</button>
+      <button class="chip" data-set="carStyle" data-val="truck">🚚 小貨車</button>
+      <button class="chip" data-set="carStyle" data-val="bus">🚌 巴士</button>
+    </div>
+    <div class="optrow"><span class="lab">車身顏色</span>
+      <button class="chip col" data-set="carColor" data-val="#ff5a4e" style="background:#ff5a4e"></button>
+      <button class="chip col" data-set="carColor" data-val="#2aa7e0" style="background:#2aa7e0"></button>
+      <button class="chip col" data-set="carColor" data-val="#ffc93c" style="background:#ffc93c"></button>
+      <button class="chip col" data-set="carColor" data-val="#5fbf70" style="background:#5fbf70"></button>
+      <button class="chip col" data-set="carColor" data-val="#b07ae0" style="background:#b07ae0"></button>
+      <button class="chip col" data-set="carColor" data-val="#f4f6f8" style="background:#f4f6f8"></button>
+    </div>
+    <div class="optrow"><span class="lab">老師自訂車子圖片</span>
+      <label class="upload">🖼️ 選擇車子圖片<input type="file" id="upCar" accept="image/*"></label>
+      <div class="thumb" id="thCar"></div>
+      <button class="chip" id="clrCar">清除</button>
+      <span class="note">建議去背 PNG，車身橫向、留白少，效果最好。</span>
+    </div>
+    <div class="optrow"><span class="lab">車子大小</span>
+      <button class="chip" data-set="carSize" data-val="s">小</button>
+      <button class="chip" data-set="carSize" data-val="m">中</button>
+      <button class="chip" data-set="carSize" data-val="l">大</button>
+      <button class="chip" data-set="carSize" data-val="xl">超大</button>
+    </div>
+    <div class="optrow"><span class="lab">車子位置</span>
+      <button class="chip" data-set="carPos" data-val="left">左</button>
+      <button class="chip" data-set="carPos" data-val="center">中</button>
+      <button class="chip" data-set="carPos" data-val="right">右</button>
+    </div>
+
+    <div class="grp">汙漬</div>
+    <div class="optrow"><span class="lab">數量</span>
+      <div class="rangewrap"><input type="range" id="sDirtCount" min="2" max="10" step="1"><output id="oDirtCount"></output></div>
+    </div>
+    <div class="optrow"><span class="lab">大小</span>
+      <button class="chip" data-set="dirtSize" data-val="s">小</button>
+      <button class="chip" data-set="dirtSize" data-val="m">中</button>
+      <button class="chip" data-set="dirtSize" data-val="l">大</button>
+      <button class="chip" data-set="dirtSize" data-val="xl">超大</button>
+    </div>
+
+    <div class="grp">水滴</div>
+    <div class="optrow"><span class="lab">數量</span>
+      <div class="rangewrap"><input type="range" id="sDropCount" min="2" max="10" step="1"><output id="oDropCount"></output></div>
+    </div>
+    <div class="optrow"><span class="lab">大小</span>
+      <button class="chip" data-set="dropSize" data-val="s">小</button>
+      <button class="chip" data-set="dropSize" data-val="m">中</button>
+      <button class="chip" data-set="dropSize" data-val="l">大</button>
+      <button class="chip" data-set="dropSize" data-val="xl">超大</button>
+    </div>
+
+    <div class="grp">滾輪大刷子</div>
+    <div class="optrow"><span class="lab">起始位置（刷子大小會跟著車子自動調整）</span>
+      <button class="chip" data-set="brushPos" data-val="left">左邊（直的）</button>
+      <button class="chip" data-set="brushPos" data-val="top">上面（橫的）</button>
+      <button class="chip" data-set="brushPos" data-val="right">右邊（直的）</button>
+    </div>
+
+    <div class="grp">背景圖</div>
+    <div class="optrow">
+      <button class="chip" data-set="bg" data-val="simple">簡單</button>
+      <button class="chip" data-set="bg" data-val="rich">複雜</button>
+      <button class="chip" data-set="bg" data-val="contrast">高對比</button>
+    </div>
+    <div class="optrow"><span class="lab">老師自訂背景圖片</span>
+      <label class="upload">🖼️ 選擇背景圖片<input type="file" id="upBg" accept="image/*"></label>
+      <div class="thumb" id="thBg"></div>
+      <button class="chip" id="clrBg">清除</button>
+    </div>
+
+    <div class="rowbtns">
+      <button class="bigbtn" id="btnApply">✅ 套用並重新開始</button>
+      <button class="bigbtn alt" id="btnCloseSettings">關閉</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ================= state & settings ================= */
+const S = {
+  level: 0,               // 1 | 2 | 4 | 6
+  phase: "idle",          // rinse -> bubble -> brush -> dry -> done
+  running: false,
+  busy: false,
+  sound: true,
+};
+const CFG = {
+  dirtCount: 4, dirtSize: "l",
+  dropCount: 4, dropSize: "l",
+  carStyle: "sedan", carColor: "#ff5a4e", carImg: null,
+  carSize: "l", carPos: "center",
+  brushPos: "left",
+  bg: "rich", bgImg: null,
+};
+/* 目標物尺寸：整體放大（原 s.65 / m1 / l1.45） */
+const SIZE    = { s:.85, m:1.25, l:1.7, xl:2.2 };
+/* 車子尺寸：改為佔畫面比例，整體放大且不會超出畫面 */
+const CARFRAC = { s:.58, m:.72, l:.86, xl:1.0 };
+const CARPOS  = { left:"28%", center:"50%", right:"72%" };
+
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const stage = $("#stage"), carWrap = $("#carWrap"), spotLayer = $("#spotLayer");
+const brush = $("#brush"), brushTip = $("#brushTip"), banner = $("#banner");
+const sprayer = $("#sprayer"), cloth = $("#cloth"), jets = $("#jets");
+
+/* ================= car artwork ================= */
+/* 全部車頭朝左，viewBox 0 0 560 300 */
+const WHEEL = (cx,cy=248,r=46)=>`
+  <circle cx="${cx}" cy="${cy}" r="${r}" fill="#1e2a38"/>
+  <circle cx="${cx}" cy="${cy}" r="${r*0.48}" fill="#cfd8e3"/>`;
+
+const CARS = {
+  sedan: c=>`
+    ${WHEEL(140)}${WHEEL(420)}
+    <path d="M30 235 q-12 -60 40 -78 l60 -18 q30 -60 96 -64 l96 0 q64 6 96 66 l88 20 q44 16 34 74 q-2 12 -16 12 l-478 0 q-14 0 -16 -12 z"
+          fill="${c}" stroke="#1e2a38" stroke-width="9" stroke-linejoin="round"/>
+    <path d="M156 142 q26 -50 78 -54 l30 0 0 56 z" fill="#bfe9ff" stroke="#1e2a38" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M286 88 l44 0 q48 6 72 54 l-116 0 z" fill="#bfe9ff" stroke="#1e2a38" stroke-width="8" stroke-linejoin="round"/>
+    <circle cx="58" cy="196" r="14" fill="#ffd23f" stroke="#1e2a38" stroke-width="7"/>
+    <circle cx="506" cy="200" r="12" fill="#ff9d5c" stroke="#1e2a38" stroke-width="7"/>
+    <rect x="252" y="176" width="52" height="12" rx="6" fill="#1e2a38"/>`,
+
+  suv: c=>`
+    ${WHEEL(142,250,50)}${WHEEL(424,250,50)}
+    <path d="M34 244 l0 -92 q0 -26 28 -32 l84 -18 q28 -56 92 -58 l104 0 q60 4 88 58 l72 18 q28 6 28 32 l0 92 q0 12 -14 12 l-468 0 q-14 0 -14 -12 z"
+          fill="${c}" stroke="#1e2a38" stroke-width="9" stroke-linejoin="round"/>
+    <path d="M166 130 q22 -46 74 -50 l34 0 0 50 z" fill="#bfe9ff" stroke="#1e2a38" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M298 80 l50 0 q46 6 66 50 l-116 0 z" fill="#bfe9ff" stroke="#1e2a38" stroke-width="8" stroke-linejoin="round"/>
+    <rect x="30" y="150" width="26" height="34" rx="8" fill="#ffd23f" stroke="#1e2a38" stroke-width="7"/>
+    <rect x="500" y="156" width="24" height="30" rx="8" fill="#ff9d5c" stroke="#1e2a38" stroke-width="7"/>
+    <rect x="60" y="196" width="440" height="14" rx="7" fill="rgba(30,42,56,.18)"/>`,
+
+  truck: c=>`
+    ${WHEEL(126)}${WHEEL(432)}
+    <path d="M196 244 l0 -116 q0 -14 16 -14 l304 0 q16 0 16 14 l0 116 q0 10 -12 10 l-312 0 q-12 0 -12 -10 z"
+          fill="#e8eef4" stroke="#1e2a38" stroke-width="9" stroke-linejoin="round"/>
+    <path d="M34 244 l0 -74 q0 -16 14 -24 l38 -50 q10 -14 30 -14 l88 0 0 172 z"
+          fill="${c}" stroke="#1e2a38" stroke-width="9" stroke-linejoin="round"/>
+    <path d="M62 158 l32 -44 q7 -10 20 -10 l52 0 0 58 z" fill="#bfe9ff" stroke="#1e2a38" stroke-width="8" stroke-linejoin="round"/>
+    <rect x="216" y="150" width="272" height="10" rx="5" fill="rgba(30,42,56,.22)"/>
+    <rect x="216" y="188" width="272" height="10" rx="5" fill="rgba(30,42,56,.22)"/>
+    <circle cx="52" cy="206" r="13" fill="#ffd23f" stroke="#1e2a38" stroke-width="7"/>`,
+
+  bus: c=>`
+    ${WHEEL(132)}${WHEEL(432)}
+    <path d="M26 244 l0 -140 q0 -28 30 -32 l452 0 q26 4 26 32 l0 140 q0 12 -14 12 l-480 0 q-14 0 -14 -12 z"
+          fill="${c}" stroke="#1e2a38" stroke-width="9" stroke-linejoin="round"/>
+    <path d="M50 174 l0 -60 q0 -12 14 -12 l58 0 0 72 z" fill="#bfe9ff" stroke="#1e2a38" stroke-width="8" stroke-linejoin="round"/>
+    <rect x="152" y="106" width="72" height="66" rx="10" fill="#bfe9ff" stroke="#1e2a38" stroke-width="8"/>
+    <rect x="244" y="106" width="72" height="66" rx="10" fill="#bfe9ff" stroke="#1e2a38" stroke-width="8"/>
+    <rect x="336" y="106" width="72" height="66" rx="10" fill="#bfe9ff" stroke="#1e2a38" stroke-width="8"/>
+    <rect x="428" y="106" width="72" height="66" rx="10" fill="#bfe9ff" stroke="#1e2a38" stroke-width="8"/>
+    <rect x="40" y="196" width="480" height="14" rx="7" fill="rgba(30,42,56,.18)"/>
+    <circle cx="52" cy="222" r="12" fill="#ffd23f" stroke="#1e2a38" stroke-width="6"/>`,
+};
+function renderCar(){
+  if(CFG.carImg){
+    carWrap.classList.add("custom");
+    $("#carImg").src = CFG.carImg;
+  }else{
+    carWrap.classList.remove("custom");
+    $("#carSVG").innerHTML = (CARS[CFG.carStyle]||CARS.sedan)(CFG.carColor);
+  }
+}
+
+/* ================= audio ================= */
+let AC = null;
+function ac(){ if(!AC) AC = new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==="suspended") AC.resume(); return AC; }
+function tone(f, dur=.15, type="sine", vol=.25, slideTo=null){
+  if(!S.sound) return;
+  try{
+    const a = ac(), o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.value = f;
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, a.currentTime+dur);
+    g.gain.setValueAtTime(vol, a.currentTime);
+    g.gain.exponentialRampToValueAtTime(.001, a.currentTime+dur);
+    o.connect(g).connect(a.destination); o.start(); o.stop(a.currentTime+dur);
+  }catch(e){}
+}
+function sSpray(dur=.5){ if(!S.sound) return;
+  try{
+    const a = ac(), len = a.sampleRate*dur, buf = a.createBuffer(1,len,a.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<len;i++) d[i] = (Math.random()*2-1)*(1-i/len);
+    const src = a.createBufferSource(); src.buffer = buf;
+    const f = a.createBiquadFilter(); f.type="highpass"; f.frequency.value=1200;
+    const g = a.createGain(); g.gain.value=.2;
+    src.connect(f).connect(g).connect(a.destination); src.start();
+  }catch(e){}
+}
+const sPop    = () => tone(620,.12,"sine",.3,980);
+const sSqueak = () => tone(300,.2,"triangle",.25,700);
+const sWipe   = () => tone(900,.18,"sine",.22,400);
+const sDing   = () => { tone(880,.35,"sine",.3); setTimeout(()=>tone(1320,.4,"sine",.25),120); };
+const sNo     = () => tone(180,.18,"square",.12,140);
+function sWin(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.3,"sine",.3), i*140)); }
+
+/* ================= helpers ================= */
+const PH_TEXT = {
+  1:{ rinse:"點選<b>畫面</b>沖水 💧", bubble:"點選<b>畫面</b>搓泡泡 🫧", brush:"點選<b>畫面</b>讓大刷子刷一刷 🧽", dry:"點選<b>畫面</b>擦乾 ✨" },
+  2:{ rinse:"點選<b>車子</b>沖水 💧", bubble:"點選<b>車子</b>搓泡泡 🫧", brush:"點選<b>車子</b>讓大刷子刷一刷 🧽", dry:"點選<b>車子</b>擦乾 ✨" },
+  4:{ rinse:"點選<b>車子</b>沖水 💧", bubble:"點選<b>車子</b>搓泡泡 🫧", brush:"點選<b>大刷子</b>，刷子就會自己刷 🧽", dry:"點選<b>車子</b>擦乾 ✨" },
+  6:{ rinse:"點選<b>汙漬</b>沖水 💧", bubble:"點選<b>汙漬</b>搓泡泡 🫧", brush:"點選<b>大刷子</b>，刷子就會自己刷 🧽", dry:"點選<b>水滴</b>擦乾 ✨" },
+};
+function setBanner(html){ banner.innerHTML = html; }
+function setSteps(){
+  const order = ["rinse","bubble","brush","dry"];
+  const idx = order.indexOf(S.phase);
+  $$("#steps span").forEach(el=>{
+    const i = order.indexOf(el.dataset.ph);
+    el.classList.toggle("on", i===idx);
+    el.classList.toggle("done", idx>=0 ? i<idx : S.phase==="done");
+  });
+}
+function fx(emoji, x, y, cls="burst"){
+  const e = document.createElement("div");
+  e.className = cls; e.textContent = emoji;
+  e.style.left = x+"px"; e.style.top = y+"px";
+  stage.appendChild(e); setTimeout(()=>e.remove(), 1100);
+}
+function centerOf(el){
+  const r = el.getBoundingClientRect();
+  return { x:r.left + r.width/2, y:r.top + r.height/2 };
+}
+function rectsOverlap(a,b){
+  return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+}
+const carRect = () => carWrap.getBoundingClientRect();
+
+/* ================= layout (car / brush 連動) ================= */
+function layoutCar(){
+  const w = stage.clientWidth, h = stage.clientHeight;
+  const base = Math.min(w*0.95, h*1.45);
+  const cw = Math.round(base * CARFRAC[CFG.carSize]);
+  document.documentElement.style.setProperty("--car-w", cw+"px");
+  document.documentElement.style.setProperty("--car-x", CARPOS[CFG.carPos]);
+}
+/* 直筒刷尺寸跟著車子走：原比例 84x210 於 560 寬的車 */
+function layoutBrush(){
+  const cw = carRect().width || 560;
+  const horz = CFG.brushPos === "top";
+  brush.classList.toggle("horz", horz);
+  brush.classList.toggle("vert", !horz);
+  if(horz){
+    brush.style.width  = Math.round(cw*0.375)+"px";
+    brush.style.height = Math.round(cw*0.150)+"px";
+  }else{
+    brush.style.width  = Math.round(cw*0.150)+"px";
+    brush.style.height = Math.round(cw*0.375)+"px";
+  }
+}
+function placeBrush(){
+  layoutBrush();
+  const st = stage.getBoundingClientRect();
+  const cr = carRect();
+  const bw = brush.offsetWidth, bh = brush.offsetHeight;
+  let x, y;
+  if(CFG.brushPos==="left"){
+    x = Math.max(8, cr.left - bw - 24);
+    y = cr.top + cr.height*0.18;
+  }else if(CFG.brushPos==="right"){
+    x = Math.min(st.width - bw - 8, cr.right + 24);
+    y = cr.top + cr.height*0.18;
+  }else{ /* top → 橫的，放在車子上方 */
+    x = cr.left + (cr.width - bw)/2;
+    y = Math.max(76, cr.top - bh - 34);
+  }
+  brush.style.left = x+"px"; brush.style.top = y+"px";
+}
+function showBrushTip(on){
+  brush.classList.toggle("tappable", on);
+  brushTip.classList.toggle("show", on);
+  if(!on) return;
+  const br = brush.getBoundingClientRect();
+  brushTip.style.left = (br.left + br.width/2 - brushTip.offsetWidth/2)+"px";
+  brushTip.style.top  = (br.top - 52)+"px";
+  const st = stage.getBoundingClientRect();
+  const L = parseFloat(brushTip.style.left);
+  brushTip.style.left = Math.min(Math.max(8, L), st.width - brushTip.offsetWidth - 8)+"px";
+  if(parseFloat(brushTip.style.top) < 76) brushTip.style.top = (br.bottom + 14)+"px";
+}
+
+/* ================= setup ================= */
+const DIRT_ZONES = [
+  {x:16,y:54},{x:30,y:64},{x:44,y:52},{x:57,y:63},{x:70,y:52},{x:82,y:61},
+  {x:24,y:45},{x:50,y:70},{x:64,y:44},{x:38,y:59}
+];
+function spawnSpots(){
+  spotLayer.innerHTML = "";
+  const n = CFG.dirtCount;
+  const base = 46 * SIZE[CFG.dirtSize] * (carRect().width/560 || 1);
+  const zones = [...DIRT_ZONES].sort(()=>Math.random()-.5).slice(0,n);
+  zones.forEach(z=>{
+    const el = document.createElement("div");
+    el.className = "spot";
+    const w = base * (0.88 + Math.random()*0.3);
+    el.style.width = w+"px"; el.style.height = w*0.82+"px";
+    el.style.left = `calc(${z.x}% - ${w/2}px)`;
+    el.style.top  = `calc(${z.y}% - ${w*0.41}px)`;
+    el.addEventListener("pointerdown", ev=>{ ev.stopPropagation(); onSpotTap(el); });
+    spotLayer.appendChild(el);
+  });
+}
+function spawnDrops(){
+  const n = CFG.dropCount;
+  const base = 36 * SIZE[CFG.dropSize] * (carRect().width/560 || 1);
+  const zones = [...DIRT_ZONES].sort(()=>Math.random()-.5).slice(0,n);
+  zones.forEach(z=>{
+    const el = document.createElement("div");
+    el.className = "drop";
+    const w = base * (0.88 + Math.random()*0.28);
+    el.style.width = w+"px"; el.style.height = w*1.05+"px"; el.style.fontSize = w+"px";
+    el.style.left = `calc(${z.x}% - ${w/2}px)`;
+    el.style.top  = `calc(${z.y}% - ${w*0.5}px)`;
+    el.addEventListener("pointerdown", ev=>{ ev.stopPropagation(); onDropTap(el); });
+    spotLayer.appendChild(el);
+  });
+}
+const liveSpots = () => $$(".spot:not(.gone)");
+const liveDrops = () => $$(".drop:not(.gone)");
+
+function applyCfgVisual(){
+  layoutCar();
+  renderCar();
+  const bg = $("#bg");
+  if(CFG.bgImg){
+    bg.className = "photo";
+    bg.style.backgroundImage = `url(${CFG.bgImg})`;
+  }else{
+    bg.className = CFG.bg;
+    bg.style.backgroundImage = "";
+  }
+  layoutBrush();
+}
+function updateHints(){
+  $$(".spot,.drop").forEach(e=>e.classList.remove("hintable"));
+  if(S.level!==6) return;
+  if(S.phase==="rinse") liveSpots().filter(s=>!s.classList.contains("soaked")).forEach(s=>s.classList.add("hintable"));
+  if(S.phase==="bubble") liveSpots().filter(s=>s.classList.contains("soaked")&&!s.classList.contains("foam")).forEach(s=>s.classList.add("hintable"));
+  if(S.phase==="dry") liveDrops().forEach(d=>d.classList.add("hintable"));
+}
+
+function startGame(level){
+  S.level = level; S.running = true; S.busy = false; S.phase = "rinse";
+  $("#lvlBadge").textContent = level + "格";
+  $("#homeOverlay").classList.add("hidden");
+  $("#winOverlay").classList.add("hidden");
+  applyCfgVisual();
+  spawnSpots();
+  brush.classList.remove("show","spin");
+  showBrushTip(false);
+  sprayer.classList.remove("show","fire");
+  cloth.classList.remove("show","wiping");
+  carWrap.classList.toggle("taplevel", level===2||level===4);
+  setBanner(PH_TEXT[level].rinse);
+  setSteps(); updateHints();
+}
+
+/* ================= 噴水器動畫 ================= */
+function placeSprayer(targetX, targetY){
+  const st = stage.getBoundingClientRect();
+  const cr = carRect();
+  const w = Math.max(110, Math.min(190, cr.width*0.26));
+  sprayer.style.width = w+"px";
+  const onRight = targetX > st.width/2;
+  sprayer.classList.toggle("flip", onRight);
+  const x = onRight ? Math.min(st.width - w - 10, targetX + cr.width*0.22)
+                    : Math.max(10, targetX - cr.width*0.22 - w);
+  const y = Math.max(80, targetY - w*0.32);
+  sprayer.style.left = x+"px";
+  sprayer.style.top  = y+"px";
+  sprayer.classList.add("show");
+  return { x: onRight ? x + w*0.10 : x + w*0.90, y: y + w*0.30, onRight };
+}
+function spawnJet(from, tx, ty, n=1){
+  for(let i=0;i<n;i++){
+    const d = document.createElement("div");
+    d.className = "jet";
+    const jx = tx + (Math.random()*60-30);
+    const jy = ty + (Math.random()*50-25);
+    const dx = jx - from.x, dy = jy - from.y;
+    d.style.left = from.x+"px"; d.style.top = from.y+"px";
+    d.style.setProperty("--dx", dx+"px");
+    d.style.setProperty("--dy", dy+"px");
+    d.style.setProperty("--rot", (Math.atan2(dy,dx)*180/Math.PI + 90)+"deg");
+    d.style.setProperty("--dur", (0.38 + Math.random()*0.25)+"s");
+    jets.appendChild(d);
+    setTimeout(()=>d.remove(), 700);
+  }
+}
+/* 對整台車噴水（1/2/4格） */
+function sprayCar(ms=1200, done){
+  const cr = carRect();
+  const from = placeSprayer(cr.left + cr.width*0.5, cr.top + cr.height*0.5);
+  sprayer.classList.add("fire");
+  sSpray(ms/1000);
+  const t0 = performance.now();
+  const iv = setInterval(()=>{
+    const c = carRect();
+    spawnJet(from, c.left + Math.random()*c.width, c.top + c.height*(0.25+Math.random()*0.5), 3);
+    if(Math.random()<0.4) fx("💦", c.left + Math.random()*c.width, c.top + c.height*(0.2+Math.random()*0.55), "splash");
+    if(performance.now()-t0 > ms){
+      clearInterval(iv);
+      sprayer.classList.remove("fire");
+      setTimeout(()=>sprayer.classList.remove("show"), 260);
+      done && done();
+    }
+  }, 70);
+}
+/* 對單一汙漬噴水（6格） */
+function sprayAt(el, done){
+  const c = centerOf(el);
+  const from = placeSprayer(c.x, c.y);
+  sprayer.classList.add("fire");
+  sSpray(.4);
+  let k = 0;
+  const iv = setInterval(()=>{
+    spawnJet(from, c.x, c.y, 3);
+    if(++k > 6){
+      clearInterval(iv);
+      sprayer.classList.remove("fire");
+      setTimeout(()=>sprayer.classList.remove("show"), 220);
+      done && done();
+    }
+  }, 55);
+}
+
+/* ================= 擦乾（布）動畫 ================= */
+function sizeCloth(){
+  const cw = carRect().width || 560;
+  const w = Math.round(cw*0.26), h = Math.round(cw*0.20);
+  cloth.style.width = w+"px"; cloth.style.height = h+"px";
+  return {w,h};
+}
+/* 整台車擦乾（1/2/4格）：布來回抹過車身 */
+function clothSweep(done){
+  const {w,h} = sizeCloth();
+  const cr = carRect();
+  const y = cr.top + cr.height*0.34;
+  cloth.style.transition = "none";
+  cloth.style.left = (cr.left - w*0.6)+"px";
+  cloth.style.top  = y+"px";
+  cloth.classList.add("show","wiping");
+  void cloth.offsetWidth;
+  cloth.style.transition = "left 1.5s ease-in-out, top .5s ease-in-out";
+  cloth.style.left = (cr.right - w*0.4)+"px";
+  setTimeout(()=>{ cloth.style.top = (cr.top + cr.height*0.58)+"px"; }, 750);
+  sWipe(); setTimeout(sWipe, 500); setTimeout(sWipe, 1000);
+  const t0 = performance.now();
+  const iv = setInterval(()=>{
+    const clr = cloth.getBoundingClientRect();
+    liveDrops().forEach(d=>{
+      if(rectsOverlap(clr, d.getBoundingClientRect())){
+        const c = centerOf(d); fx("✨", c.x-14, c.y-14);
+        d.classList.add("gone");
+      }
+    });
+    if(performance.now()-t0 > 1600){
+      clearInterval(iv);
+      liveDrops().forEach(d=>{ const c = centerOf(d); fx("✨", c.x-14, c.y-14); d.classList.add("gone"); });
+      cloth.classList.remove("wiping");
+      setTimeout(()=>cloth.classList.remove("show"), 250);
+      done && done();
+    }
+  }, 80);
+}
+/* 單一水滴擦乾（6格）：布飛過去抹一下 */
+function clothAt(el, done){
+  const {w,h} = sizeCloth();
+  const c = centerOf(el);
+  cloth.style.transition = "left .18s ease, top .18s ease";
+  cloth.style.left = (c.x - w/2)+"px";
+  cloth.style.top  = (c.y - h/2)+"px";
+  cloth.classList.add("show","wiping");
+  sWipe();
+  setTimeout(()=>{
+    cloth.classList.remove("wiping");
+    setTimeout(()=>cloth.classList.remove("show"), 200);
+    done && done();
+  }, 420);
+}
+
+/* ================= phase engine ================= */
+function nextPhase(){
+  const order = ["rinse","bubble","brush","dry","done"];
+  S.phase = order[order.indexOf(S.phase)+1];
+  setSteps();
+  if(S.phase==="brush"){
+    placeBrush();
+    brush.classList.add("show");
+    if(S.level>=4) showBrushTip(true);   /* 4、6格：點刷子就開始（不再用方向鍵） */
+  }else{
+    showBrushTip(false);
+  }
+  if(S.phase==="dry"){
+    brush.classList.remove("show","spin");
+    spawnDrops();
+  }
+  if(S.phase==="done"){ return win(); }
+  setBanner(PH_TEXT[S.level][S.phase]);
+  updateHints();
+}
+function win(){
+  S.running = false;
+  showBrushTip(false);
+  sWin();
+  const cr = carRect();
+  for(let i=0;i<10;i++){
+    setTimeout(()=>{
+      const e = document.createElement("div");
+      e.className="sparkle"; e.textContent = ["✨","🌟","⭐"][i%3];
+      e.style.left = (cr.left + Math.random()*cr.width)+"px";
+      e.style.top  = (cr.top  + Math.random()*cr.height)+"px";
+      stage.appendChild(e); setTimeout(()=>e.remove(),1200);
+    }, i*110);
+  }
+  setBanner("🎉 <b>洗好了！</b>車子亮晶晶！");
+  setTimeout(()=>$("#winOverlay").classList.remove("hidden"), 1300);
+}
+
+/* -------- whole-car actions (levels 1/2/4) -------- */
+function rinseAll(done){
+  carWrap.classList.add("wiggle"); setTimeout(()=>carWrap.classList.remove("wiggle"),500);
+  sprayCar(1200, ()=>{
+    liveSpots().forEach(s=>s.classList.add("soaked"));
+    done && done();
+  });
+  setTimeout(()=>liveSpots().forEach(s=>s.classList.add("soaked")), 700);
+}
+function bubbleAll(done){
+  sSqueak();
+  liveSpots().forEach((s,i)=>{
+    setTimeout(()=>{
+      s.classList.add("foam");
+      const c = centerOf(s); fx("🫧", c.x-14, c.y-14);
+    }, i*120);
+  });
+  setTimeout(()=>done && done(), liveSpots().length*120 + 350);
+}
+function dryAll(done){ clothSweep(done); }
+
+/* 刷子自動刷：方向依起始位置決定（左→右、右→左、上→下） */
+function brushAutoSweep(done){
+  showBrushTip(false);
+  layoutBrush();
+  brush.classList.add("show","spin");
+  const st = stage.getBoundingClientRect();
+  const cr = carRect();
+  const bw = brush.offsetWidth, bh = brush.offsetHeight;
+  brush.style.transition = "none";
+  let toX, toY;
+  if(CFG.brushPos==="top"){
+    brush.style.left = (cr.left + (cr.width-bw)/2)+"px";
+    brush.style.top  = Math.max(76, cr.top - bh - 20)+"px";
+    toX = cr.left + (cr.width-bw)/2;
+    toY = cr.bottom - bh*0.6;
+  }else if(CFG.brushPos==="right"){
+    brush.style.left = Math.min(st.width-bw-6, cr.right + 18)+"px";
+    brush.style.top  = (cr.top + cr.height*0.14)+"px";
+    toX = Math.max(6, cr.left - bw - 12);
+    toY = cr.top + cr.height*0.14;
+  }else{
+    brush.style.left = Math.max(6, cr.left - bw - 18)+"px";
+    brush.style.top  = (cr.top + cr.height*0.14)+"px";
+    toX = Math.min(st.width-bw-6, cr.right + 12);
+    toY = cr.top + cr.height*0.14;
+  }
+  void brush.offsetWidth;
+  brush.style.transition = "left 1.9s ease-in-out, top 1.9s ease-in-out";
+  brush.style.left = toX+"px"; brush.style.top = toY+"px";
+  sSqueak(); setTimeout(sSqueak, 620); setTimeout(sSqueak, 1240);
+
+  const t0 = performance.now();
+  const iv = setInterval(()=>{
+    const br = brush.getBoundingClientRect();
+    liveSpots().forEach(s=>{
+      if(s.classList.contains("foam") && rectsOverlap(br, s.getBoundingClientRect())){
+        const c = centerOf(s); fx("🫧", c.x-14, c.y-14); sPop();
+        s.classList.add("gone");
+      }
+    });
+    if(performance.now()-t0 > 2050){
+      clearInterval(iv);
+      brush.classList.remove("spin");
+      brush.style.transition = "left .35s ease, top .35s ease";
+      const remaining = liveSpots().length;
+      if(remaining === 0){
+        sDing();
+        done && done();
+      }else{
+        /* 還有泡泡沒刷到 → 刷子回到起點，再點一次 */
+        placeBrush();
+        showBrushTip(true);
+        setBanner("還有泡泡！再<b>點一次大刷子</b> 🧽");
+        S.busy = false;
+      }
+    }
+  }, 80);
+}
+
+/* -------- taps -------- */
+function doWholePhase(){
+  if(!S.running || S.busy) return;
+  S.busy = true;
+  const finish = ()=>{ S.busy = false; nextPhase(); };
+  if(S.phase==="rinse")       rinseAll(finish);
+  else if(S.phase==="bubble") bubbleAll(finish);
+  else if(S.phase==="brush")  brushAutoSweep(finish);
+  else if(S.phase==="dry")    dryAll(finish);
+  else S.busy = false;
+}
+function onGlobalTap(ev){
+  if(!S.running || S.busy) return;
+  ac();
+  if(S.level===1){ doWholePhase(); return; }
+  if(S.level===2||S.level===4){
+    sNo(); fx("👉", ev.clientX-14, ev.clientY-14);
+  }
+}
+function onCarTap(ev){
+  if(!S.running || S.busy) return;
+  ev && ev.stopPropagation && ev.stopPropagation(); ac();
+  if(S.level===1){ doWholePhase(); return; }
+  if(S.level===2){ doWholePhase(); return; }
+  if(S.level===4){
+    if(S.phase==="brush"){ sNo(); return; }  /* brush 階段要點刷子 */
+    doWholePhase();
+  }
+}
+/* 點大刷子 → 自動刷（4、6格） */
+function onBrushTap(ev){
+  ev.stopPropagation();
+  if(!S.running || S.busy) return;
+  if(S.phase!=="brush") return;
+  ac();
+  if(S.level<4) return;
+  S.busy = true;
+  brushAutoSweep(()=>{ S.busy = false; nextPhase(); });
+}
+function onSpotTap(el){
+  if(!S.running || S.busy) return;
+  ac();
+  if(S.level!==6){ onCarTap(null); return; }
+  const c = centerOf(el);
+  if(S.phase==="rinse" && !el.classList.contains("soaked")){
+    S.busy = true;
+    sprayAt(el, ()=>{
+      S.busy = false;
+      el.classList.add("soaked");
+      if(liveSpots().every(s=>s.classList.contains("soaked"))) nextPhase();
+      else updateHints();
+    });
+  } else if(S.phase==="bubble" && el.classList.contains("soaked") && !el.classList.contains("foam")){
+    sSqueak(); fx("🫧", c.x-14, c.y-14);
+    el.classList.add("foam");
+    if(liveSpots().every(s=>s.classList.contains("foam"))) nextPhase();
+    else updateHints();
+  } else {
+    sNo();
+  }
+}
+function onDropTap(el){
+  if(!S.running || S.busy) return;
+  ac();
+  if(S.level!==6){ onCarTap(null); return; }
+  if(S.phase!=="dry"){ sNo(); return; }
+  S.busy = true;
+  clothAt(el, ()=>{
+    S.busy = false;
+    const c = centerOf(el); fx("✨", c.x-14, c.y-14);
+    el.classList.add("gone");
+    if(liveDrops().length===0) setTimeout(nextPhase, 250);
+    else updateHints();
+  });
+}
+
+/* ================= wiring ================= */
+stage.addEventListener("pointerdown", onGlobalTap);
+carWrap.addEventListener("pointerdown", ev=>onCarTap(ev));
+brush.addEventListener("pointerdown", onBrushTap);
+
+$$(".lvlcard").forEach(c=>c.addEventListener("click", ()=>{ ac(); startGame(+c.dataset.lvl); }));
+$("#btnAgain").addEventListener("click", ()=>startGame(S.level));
+$("#btnPick").addEventListener("click", ()=>{ $("#winOverlay").classList.add("hidden"); $("#homeOverlay").classList.remove("hidden"); });
+$("#btnHome").addEventListener("click", ()=>{ S.running=false; showBrushTip(false); $("#homeOverlay").classList.remove("hidden"); });
+$("#btnSound").addEventListener("click", e=>{ S.sound=!S.sound; e.currentTarget.textContent = S.sound?"🔊":"🔇"; });
+
+/* settings */
+const settingsOverlay = $("#settingsOverlay");
+function syncSettingsUI(){
+  $("#sDirtCount").value = CFG.dirtCount; $("#oDirtCount").value = CFG.dirtCount;
+  $("#sDropCount").value = CFG.dropCount; $("#oDropCount").value = CFG.dropCount;
+  $$(".chip[data-set]").forEach(ch=>ch.classList.toggle("sel", CFG[ch.dataset.set]===ch.dataset.val));
+  $("#thCar").classList.toggle("show", !!CFG.carImg);
+  $("#thCar").style.backgroundImage = CFG.carImg ? `url(${CFG.carImg})` : "";
+  $("#thBg").classList.toggle("show", !!CFG.bgImg);
+  $("#thBg").style.backgroundImage = CFG.bgImg ? `url(${CFG.bgImg})` : "";
+}
+$$(".chip[data-set]").forEach(ch=>ch.addEventListener("click", ()=>{ CFG[ch.dataset.set]=ch.dataset.val; syncSettingsUI(); }));
+$("#sDirtCount").addEventListener("input", e=>{ CFG.dirtCount = +e.target.value; $("#oDirtCount").value=e.target.value; });
+$("#sDropCount").addEventListener("input", e=>{ CFG.dropCount = +e.target.value; $("#oDropCount").value=e.target.value; });
+
+function readImage(input, cb){
+  const f = input.files && input.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = () => cb(r.result);
+  r.readAsDataURL(f);
+  input.value = "";
+}
+$("#upCar").addEventListener("change", e=>readImage(e.target, url=>{ CFG.carImg = url; syncSettingsUI(); }));
+$("#upBg").addEventListener("change",  e=>readImage(e.target, url=>{ CFG.bgImg  = url; syncSettingsUI(); }));
+$("#clrCar").addEventListener("click", ()=>{ CFG.carImg = null; syncSettingsUI(); });
+$("#clrBg").addEventListener("click",  ()=>{ CFG.bgImg  = null; syncSettingsUI(); });
+
+function openSettings(){ syncSettingsUI(); settingsOverlay.classList.remove("hidden"); }
+$("#btnSettings").addEventListener("click", openSettings);
+$("#homeSettings").addEventListener("click", openSettings);
+$("#btnCloseSettings").addEventListener("click", ()=>settingsOverlay.classList.add("hidden"));
+$("#btnApply").addEventListener("click", ()=>{
+  settingsOverlay.classList.add("hidden");
+  applyCfgVisual();
+  if(S.level) startGame(S.level);
+});
+
+window.addEventListener("resize", ()=>{
+  layoutCar(); layoutBrush();
+  if(S.phase==="brush"){ placeBrush(); if(S.level>=4) showBrushTip(true); }
+});
+
+applyCfgVisual();
+setSteps();
+</script>
+</body>
+</html>
