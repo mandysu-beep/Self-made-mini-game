@@ -79,6 +79,9 @@ img{max-width:100%}
 .hero-text{position:relative;z-index:3;max-width:min(640px,56%);margin-top:56px}
 .hero h1{margin:0;color:var(--forest);font-size:clamp(46px,5.4vw,84px);line-height:1.12;font-weight:900;letter-spacing:.02em}
 .hero .sub{margin:20px 0 0;font-size:clamp(21px,1.6vw,26px);line-height:1.7;color:var(--ink);max-width:28em}
+.share-invite{display:flex;flex-direction:column;align-items:flex-start;gap:16px;margin-top:28px}
+.share-invite p{margin:0;max-width:16em;color:var(--forest);font-size:22px;font-weight:700;line-height:1.5}
+.site-foot .share-link{margin-top:12px}
 .hero-sky{position:absolute;inset:0;pointer-events:none}
 .planet{position:absolute;right:-140px;top:-170px;width:clamp(420px,42vw,640px);aspect-ratio:1;border-radius:50%;background:var(--amber);animation:planet-in 1.1s var(--ease-out) both}
 .moon{position:absolute;right:clamp(140px,17vw,300px);bottom:-150px;width:clamp(260px,24vw,380px);aspect-ratio:1;border-radius:50%;background:var(--blush);animation:planet-in 1.1s .12s var(--ease-out) both}
